@@ -67,7 +67,23 @@ class ContentControllerIntegrationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.title").value("Private Daily Vocabulary"));
 
-        mockMvc.perform(post("/api/v1/decks/{deckId}/flashcards", deckId)
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/decks/{id}", deckId)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "Updated Private Daily Vocabulary",
+                                  "description": "Updated private deck",
+                                  "sourceLanguageId": %d,
+                                  "targetLanguageId": %d,
+                                  "topicId": %d,
+                                  "visibility": "PRIVATE"
+                                }
+                                """.formatted(vietnameseId, englishId, dailyLifeId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("Updated Private Daily Vocabulary"));
+
+        JsonNode flashcard = performJson(post("/api/v1/decks/{deckId}/flashcards", deckId)
                         .header("Authorization", "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -80,9 +96,24 @@ class ContentControllerIntegrationTests {
                                   "difficultyLevel": "EASY",
                                   "cardOrder": 1
                                 }
+                                """), 201);
+        Long flashcardId = flashcard.at("/data/id").asLong();
+        assertThat(flashcard.at("/data/frontText").asText()).isEqualTo("apple");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/flashcards/{id}", flashcardId)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "frontText": "green apple",
+                                  "backText": "qua tao xanh",
+                                  "difficultyLevel": "MEDIUM",
+                                  "cardOrder": 2
+                                }
                                 """))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.data.frontText").value("apple"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.frontText").value("green apple"))
+                .andExpect(jsonPath("$.data.difficultyLevel").value("MEDIUM"));
 
         mockMvc.perform(get("/api/v1/decks/{deckId}/flashcards", deckId))
                 .andExpect(status().isForbidden());
@@ -90,7 +121,16 @@ class ContentControllerIntegrationTests {
         mockMvc.perform(get("/api/v1/decks/{deckId}/flashcards", deckId)
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items[0].frontText").value("apple"));
+                .andExpect(jsonPath("$.data.items[0].frontText").value("green apple"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/flashcards/{id}", flashcardId)
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/decks/{deckId}/flashcards", deckId)
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalItems").value(0));
 
         mockMvc.perform(post("/api/v1/decks")
                         .header("Authorization", "Bearer " + accessToken)
@@ -102,6 +142,14 @@ class ContentControllerIntegrationTests {
                                 }
                                 """))
                 .andExpect(status().isForbidden());
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/decks/{id}", deckId)
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/decks/{id}", deckId)
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isNotFound());
     }
 
     private String registerAndLogin() throws Exception {
@@ -129,8 +177,12 @@ class ContentControllerIntegrationTests {
     }
 
     private JsonNode performJson(org.springframework.test.web.servlet.RequestBuilder requestBuilder) throws Exception {
+        return performJson(requestBuilder, 200);
+    }
+
+    private JsonNode performJson(org.springframework.test.web.servlet.RequestBuilder requestBuilder, int expectedStatus) throws Exception {
         String response = mockMvc.perform(requestBuilder)
-                .andExpect(status().isOk())
+                .andExpect(status().is(expectedStatus))
                 .andExpect(jsonPath("$.success").value(true))
                 .andReturn()
                 .getResponse()

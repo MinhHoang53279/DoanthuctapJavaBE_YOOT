@@ -18,7 +18,6 @@
 | ACTIVE | Duoc dang nhap va su dung binh thuong |
 | LOCKED | Bi khoa tam thoi boi admin |
 | DISABLED | Bi vo hieu hoa dai han |
-| PENDING_VERIFICATION | Chua xac minh email, dung khi co email verification |
 
 ## Luat auth
 
@@ -36,7 +35,7 @@
 3. Moi deck co mot creator.
 4. Learner chi sua/xoa deck do minh tao va chua bi khoa.
 5. Content Manager va Admin co the tao deck public.
-6. Deck public can co status `PENDING_REVIEW` truoc khi thanh `APPROVED`.
+6. Deck public can co status `PENDING` truoc khi thanh `APPROVED`.
 7. Deck `REJECTED` khong hien thi tren public catalog.
 8. Xoa deck nen la soft delete neu deck da co lich su hoc.
 9. Moi flashcard chi thuoc mot deck.
@@ -47,10 +46,9 @@
 | Status | Y nghia |
 |---|---|
 | DRAFT | Dang soan thao |
-| PENDING_REVIEW | Cho duyet cong khai |
+| PENDING | Cho duyet cong khai |
 | APPROVED | Da duyet va co the cong khai |
 | REJECTED | Bi tu choi |
-| ARCHIVED | Da luu tru, khong con su dung chinh |
 
 ## Visibility deck
 
@@ -58,7 +56,6 @@
 |---|---|
 | PRIVATE | Chi creator thay va hoc |
 | PUBLIC | Co the xuat hien trong catalog sau khi duyet |
-| CLASSROOM | Chi lop duoc gan moi thay |
 
 ## Luat learning
 
