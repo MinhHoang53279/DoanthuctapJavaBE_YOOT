@@ -14,6 +14,10 @@ import java.util.Optional;
 
 public interface DeckRepository extends JpaRepository<Deck, Long> {
 
+    long countByDeletedAtIsNull();
+
+    long countByDeletedAtIsNullAndStatus(DeckStatus status);
+
     @EntityGraph(attributePaths = {
             "sourceLanguage",
             "targetLanguage",

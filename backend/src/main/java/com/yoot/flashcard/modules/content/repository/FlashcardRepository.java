@@ -12,6 +12,8 @@ import java.util.Optional;
 
 public interface FlashcardRepository extends JpaRepository<Flashcard, Long> {
 
+    long countByDeletedAtIsNullAndActiveTrue();
+
     @EntityGraph(attributePaths = {"deck", "deck.createdBy"})
     @Query("select f from Flashcard f where f.id = :id and f.deletedAt is null")
     Optional<Flashcard> findActiveById(@Param("id") Long id);

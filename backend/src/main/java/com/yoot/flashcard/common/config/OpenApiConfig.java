@@ -75,7 +75,9 @@ public class OpenApiConfig {
     public GroupedOpenApi adminApi() {
         return GroupedOpenApi.builder()
                 .group("admin")
-                .pathsToMatch("/api/v1/admin/**")
+                .pathsToMatch(
+                        "/api/v1/admin/**",
+                        "/api/v1/reports/**")
                 .build();
     }
 }

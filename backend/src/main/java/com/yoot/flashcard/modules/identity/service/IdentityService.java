@@ -2,6 +2,7 @@ package com.yoot.flashcard.modules.identity.service;
 
 import com.yoot.flashcard.common.exception.ResourceNotFoundException;
 import com.yoot.flashcard.common.response.PageResponse;
+import com.yoot.flashcard.modules.admin.service.AuditLogService;
 import com.yoot.flashcard.modules.identity.dto.UpdateProfileRequest;
 import com.yoot.flashcard.modules.identity.dto.UserDetailResponse;
 import com.yoot.flashcard.modules.identity.dto.UserSummaryResponse;
@@ -25,10 +26,12 @@ public class IdentityService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
+    private final AuditLogService auditLogService;
 
-    public IdentityService(UserRepository userRepository, UserMapper userMapper) {
+    public IdentityService(UserRepository userRepository, UserMapper userMapper, AuditLogService auditLogService) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.auditLogService = auditLogService;
     }
 
     @Transactional(readOnly = true)
@@ -53,8 +56,16 @@ public class IdentityService {
     @Transactional
     public UserDetailResponse updateStatus(Long id, UserStatus status) {
         User user = findUser(id);
+        UserStatus previousStatus = user.getStatus();
         user.setStatus(status);
-        return userMapper.toDetail(userRepository.save(user));
+        User saved = userRepository.save(user);
+        auditLogService.recordCurrentActor(
+                "USER_STATUS_UPDATED",
+                "USER",
+                saved.getId(),
+                "status=%s->%s".formatted(previousStatus, status)
+        );
+        return userMapper.toDetail(saved);
     }
 
     @Transactional

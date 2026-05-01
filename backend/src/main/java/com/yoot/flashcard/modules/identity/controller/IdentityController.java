@@ -35,7 +35,7 @@ public class IdentityController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_READ')")
     public ApiResponse<PageResponse<UserSummaryResponse>> listUsers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -46,13 +46,13 @@ public class IdentityController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_READ')")
     public ApiResponse<UserDetailResponse> getUser(@PathVariable Long id) {
         return ApiResponse.success("User retrieved", identityService.getUser(id));
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAuthority('USER_MANAGE_STATUS')")
     public ApiResponse<UserDetailResponse> updateStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateUserStatusRequest request

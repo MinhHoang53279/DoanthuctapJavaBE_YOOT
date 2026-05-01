@@ -13,6 +13,10 @@ import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    long countByDeletedAtIsNull();
+
+    long countByDeletedAtIsNullAndStatus(UserStatus status);
+
     Optional<User> findByEmail(String email);
 
     Optional<User> findByUsername(String username);
