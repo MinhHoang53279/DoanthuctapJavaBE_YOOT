@@ -53,6 +53,7 @@ public class OpenApiConfig {
                         "/api/v1/content/**",
                         "/api/v1/languages/**",
                         "/api/v1/topics/**",
+                        "/api/v1/tags/**",
                         "/api/v1/decks/**",
                         "/api/v1/flashcards/**")
                 .build();

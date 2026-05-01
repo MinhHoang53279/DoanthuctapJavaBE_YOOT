@@ -47,6 +47,13 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/refresh"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/languages/**",
+                                "/api/v1/topics/**",
+                                "/api/v1/tags/**",
+                                "/api/v1/decks/**",
+                                "/api/v1/flashcards/**"
+                        ).permitAll()
                         .requestMatchers(
                                 "/api/v1/auth/health",
                                 "/swagger-ui/**",
