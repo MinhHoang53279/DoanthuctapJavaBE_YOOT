@@ -25,6 +25,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("select u from User u where u.id = :id and u.deletedAt is null")
     Optional<User> findWithRolesById(@Param("id") Long id);
 
+    @EntityGraph(attributePaths = {"roles", "roles.permissions", "profile"})
+    @Query("select u from User u where u.id = :id and u.deletedAt is null")
+    Optional<User> findWithRolesAndPermissionsById(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = {"roles", "roles.permissions", "profile"})
+    @Query("""
+            select u from User u
+            where u.deletedAt is null
+              and (
+                lower(u.email) = lower(:usernameOrEmail)
+                or lower(u.username) = lower(:usernameOrEmail)
+              )
+            """)
+    Optional<User> findWithRolesAndPermissionsByUsernameOrEmail(@Param("usernameOrEmail") String usernameOrEmail);
+
     @EntityGraph(attributePaths = {"roles"})
     @Query("""
             select u from User u
