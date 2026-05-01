@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: flashcard-platform
+  datasource:
+    url: jdbc:postgresql://localhost:5432/flashcard_platform
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  security:
+    jwt:
+      secret: change-this-secret-key-before-production
+      access-token-expiration-ms: 3600000
+      refresh-token-expiration-ms: 604800000
