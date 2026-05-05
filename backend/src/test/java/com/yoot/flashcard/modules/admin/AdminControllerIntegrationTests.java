@@ -2,6 +2,7 @@ package com.yoot.flashcard.modules.admin;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yoot.flashcard.MongoIntegrationTestSupport;
 import com.yoot.flashcard.modules.identity.entity.Role;
 import com.yoot.flashcard.modules.identity.entity.User;
 import com.yoot.flashcard.modules.identity.repository.RoleRepository;
@@ -24,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class AdminControllerIntegrationTests {
+class AdminControllerIntegrationTests extends MongoIntegrationTestSupport {
 
     @Autowired
     private MockMvc mockMvc;
@@ -170,7 +171,7 @@ class AdminControllerIntegrationTests {
                 .orElseThrow(() -> new IllegalStateException("Role not found: " + roleName));
         user.getRoles().clear();
         user.getRoles().add(role);
-        userRepository.saveAndFlush(user);
+        userRepository.save(user);
 
         JsonNode login = performJson(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)

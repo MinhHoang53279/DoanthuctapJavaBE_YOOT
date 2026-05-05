@@ -20,16 +20,22 @@ import com.yoot.flashcard.modules.content.repository.TopicRepository;
 import com.yoot.flashcard.modules.identity.entity.User;
 import com.yoot.flashcard.modules.identity.repository.UserRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @Service
 public class DeckService {
@@ -44,6 +50,7 @@ public class DeckService {
     private final UserRepository userRepository;
     private final ContentMapper contentMapper;
     private final ContentAccessService accessService;
+    private final MongoTemplate mongoTemplate;
 
     public DeckService(
             DeckRepository deckRepository,
@@ -52,7 +59,8 @@ public class DeckService {
             TagRepository tagRepository,
             UserRepository userRepository,
             ContentMapper contentMapper,
-            ContentAccessService accessService
+            ContentAccessService accessService,
+            MongoTemplate mongoTemplate
     ) {
         this.deckRepository = deckRepository;
         this.languageRepository = languageRepository;
@@ -61,9 +69,9 @@ public class DeckService {
         this.userRepository = userRepository;
         this.contentMapper = contentMapper;
         this.accessService = accessService;
+        this.mongoTemplate = mongoTemplate;
     }
 
-    @Transactional(readOnly = true)
     public PageResponse<DeckResponse> listDecks(
             int page,
             int size,
@@ -77,28 +85,56 @@ public class DeckService {
                 normalizeSize(size),
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
-        Page<DeckResponse> decks = deckRepository.searchDecks(
-                SecurityUtils.currentUserId().orElse(null),
-                accessService.canManageContent(),
-                DeckVisibility.PUBLIC,
-                DeckStatus.APPROVED,
-                normalizeKeyword(keyword),
-                topicId,
-                languageId,
-                visibility,
-                pageable
-        ).map(contentMapper::toDeck);
+        Long currentUserId = SecurityUtils.currentUserId().orElse(null);
+        boolean canViewAll = accessService.canManageContent();
+        List<Criteria> criteria = new ArrayList<>();
+        criteria.add(Criteria.where("deletedAt").is(null));
+        if (!canViewAll) {
+            Criteria publicApproved = Criteria.where("visibility").is(DeckVisibility.PUBLIC)
+                    .and("status").is(DeckStatus.APPROVED);
+            if (currentUserId == null) {
+                criteria.add(publicApproved);
+            } else {
+                criteria.add(new Criteria().orOperator(
+                        publicApproved,
+                        Criteria.where("createdBy.$id").is(currentUserId)
+                ));
+            }
+        }
+
+        String normalizedKeyword = normalizeKeyword(keyword);
+        if (normalizedKeyword != null) {
+            Pattern pattern = Pattern.compile(Pattern.quote(normalizedKeyword), Pattern.CASE_INSENSITIVE);
+            criteria.add(new Criteria().orOperator(
+                    Criteria.where("title").regex(pattern),
+                    Criteria.where("description").regex(pattern)
+            ));
+        }
+        if (topicId != null) {
+            criteria.add(Criteria.where("topic.$id").is(topicId));
+        }
+        if (languageId != null) {
+            criteria.add(new Criteria().orOperator(
+                    Criteria.where("sourceLanguage.$id").is(languageId),
+                    Criteria.where("targetLanguage.$id").is(languageId)
+            ));
+        }
+        if (visibility != null) {
+            criteria.add(Criteria.where("visibility").is(visibility));
+        }
+
+        Query query = new Query(new Criteria().andOperator(criteria.toArray(Criteria[]::new)));
+        long total = mongoTemplate.count(query, Deck.class);
+        List<Deck> items = mongoTemplate.find(query.with(pageable), Deck.class);
+        Page<DeckResponse> decks = new PageImpl<>(items, pageable, total).map(contentMapper::toDeck);
         return PageResponse.from(decks);
     }
 
-    @Transactional(readOnly = true)
     public DeckResponse getDeck(Long id) {
         Deck deck = findDeck(id);
         accessService.requireDeckRead(deck);
         return contentMapper.toDeck(deck);
     }
-
-    @Transactional
     public DeckResponse createDeck(DeckRequest request) {
         Long userId = accessService.requireCurrentUserId();
         DeckVisibility visibility = request.visibility() == null ? DeckVisibility.PRIVATE : request.visibility();
@@ -116,8 +152,6 @@ public class DeckService {
         deck.setCreatedBy(currentUser);
         return contentMapper.toDeck(deckRepository.save(deck));
     }
-
-    @Transactional
     public DeckResponse updateDeck(Long id, DeckRequest request) {
         Deck deck = findDeck(id);
         accessService.requireDeckManage(deck);
@@ -135,8 +169,6 @@ public class DeckService {
         }
         return contentMapper.toDeck(deckRepository.save(deck));
     }
-
-    @Transactional
     public DeckResponse submitForReview(Long id) {
         Deck deck = findDeck(id);
         accessService.requireDeckManage(deck);
@@ -150,8 +182,6 @@ public class DeckService {
         deck.setRejectionReason(null);
         return contentMapper.toDeck(deckRepository.save(deck));
     }
-
-    @Transactional
     public void deleteDeck(Long id) {
         Deck deck = findDeck(id);
         accessService.requireDeckManage(deck);

@@ -1,51 +1,40 @@
 package com.yoot.flashcard.modules.learning.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.yoot.flashcard.common.mongo.SequencedDocument;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @NoArgsConstructor
-@Entity
-@Table(name = "review_logs")
+@Document(collection = "review_logs")
+@SequencedDocument("review_logs")
 public class ReviewLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "review_item_id", nullable = false)
+    @DBRef
+    @Indexed
     private ReviewItem reviewItem;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "study_session_id")
+    @DBRef
+    @Indexed
     private StudySession studySession;
 
-    @Column(name = "quality_score", nullable = false)
     private int qualityScore;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
     private ReviewRating rating;
 
-    @Column(name = "response_time_ms")
     private Long responseTimeMs;
 
-    @Column(name = "reviewed_at", nullable = false)
+    @Indexed
     private LocalDateTime reviewedAt;
 }

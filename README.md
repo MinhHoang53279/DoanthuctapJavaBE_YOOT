@@ -5,16 +5,16 @@ Du an duoc tach theo huong full project, trong do backend Spring Boot nam trong 
 ## Cau truc
 
 - `backend/`: ma nguon backend Spring Boot
-- `docs/erd.md`: ERD va mo ta bang du lieu
+- `docs/erd.md`: mo ta collection va quan he du lieu
 - `docs/architecture.md`: kien truc module, package va roadmap coding
 
 ## Chay backend
 
 1. Tao file `.env` tu `.env.example` va thay gia tri secret/password that.
-2. Khoi dong PostgreSQL local neu can:
+2. Khoi dong MongoDB local neu can:
 
 ```bash
-docker compose --env-file .env up -d postgres
+docker compose --env-file .env up -d mongodb
 ```
 
 3. Chay backend:
@@ -40,9 +40,8 @@ http://localhost:8080/actuator/health
 
 Backend doc cac bien moi truong sau:
 
-- `DB_URL`
-- `DB_USERNAME`
-- `DB_PASSWORD`
+- `MONGODB_URI`
+- `MONGODB_TEST_URI`
 - `JWT_SECRET`
 - `ACCESS_TOKEN_EXPIRATION_MS`
 - `REFRESH_TOKEN_EXPIRATION_MS`

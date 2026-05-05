@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class LearningProgressService {
@@ -41,8 +42,15 @@ public class LearningProgressService {
                 });
 
         long totalCards = flashcardRepository.countActiveByDeckId(deck.getId());
-        int learnedCards = Math.toIntExact(reviewItemRepository.countLearned(user.getId(), deck.getId()));
-        int masteredCards = Math.toIntExact(reviewItemRepository.countMastered(user.getId(), deck.getId(), MasteryLevel.MASTERED));
+        List<com.yoot.flashcard.modules.learning.entity.ReviewItem> userReviewItems = reviewItemRepository.findByUserId(user.getId());
+        int learnedCards = Math.toIntExact(userReviewItems.stream()
+                .filter(item -> item.getFlashcard().getDeck().getId().equals(deck.getId()))
+                .filter(item -> item.getRepetitionCount() > 0)
+                .count());
+        int masteredCards = Math.toIntExact(userReviewItems.stream()
+                .filter(item -> item.getFlashcard().getDeck().getId().equals(deck.getId()))
+                .filter(item -> item.getMasteryLevel() == MasteryLevel.MASTERED)
+                .count());
         BigDecimal completionRate = totalCards == 0 ? BigDecimal.ZERO : BigDecimal.valueOf(learnedCards)
                 .multiply(BigDecimal.valueOf(100))
                 .divide(BigDecimal.valueOf(totalCards), 2, RoundingMode.HALF_UP);

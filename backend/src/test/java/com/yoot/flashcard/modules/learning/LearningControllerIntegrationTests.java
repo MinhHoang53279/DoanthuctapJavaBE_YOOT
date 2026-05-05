@@ -2,6 +2,7 @@ package com.yoot.flashcard.modules.learning;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yoot.flashcard.MongoIntegrationTestSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -19,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class LearningControllerIntegrationTests {
+class LearningControllerIntegrationTests extends MongoIntegrationTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

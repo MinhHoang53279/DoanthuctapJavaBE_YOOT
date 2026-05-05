@@ -22,7 +22,6 @@ import com.yoot.flashcard.modules.identity.repository.UserRepository;
 import com.yoot.flashcard.modules.learning.repository.StudySessionRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -61,8 +60,6 @@ public class AdminService {
         this.userMapper = userMapper;
         this.clock = clock;
     }
-
-    @Transactional(readOnly = true)
     public AdminDashboardResponse dashboard() {
         return new AdminDashboardResponse(
                 userRepository.countByDeletedAtIsNull(),
@@ -75,8 +72,6 @@ public class AdminService {
                 reportRepository.countByStatus(ReportStatus.OPEN)
         );
     }
-
-    @Transactional
     public DeckResponse approveDeck(Long deckId) {
         User actor = requireCurrentUser();
         Deck deck = findDeckForModeration(deckId);
@@ -97,8 +92,6 @@ public class AdminService {
         );
         return contentMapper.toDeck(saved);
     }
-
-    @Transactional
     public DeckResponse rejectDeck(Long deckId, DeckRejectionRequest request) {
         User actor = requireCurrentUser();
         Deck deck = findDeckForModeration(deckId);
@@ -120,13 +113,9 @@ public class AdminService {
         );
         return contentMapper.toDeck(saved);
     }
-
-    @Transactional
     public UserDetailResponse lockUser(Long userId) {
         return changeUserStatus(userId, UserStatus.LOCKED, "USER_LOCKED");
     }
-
-    @Transactional
     public UserDetailResponse unlockUser(Long userId) {
         return changeUserStatus(userId, UserStatus.ACTIVE, "USER_UNLOCKED");
     }

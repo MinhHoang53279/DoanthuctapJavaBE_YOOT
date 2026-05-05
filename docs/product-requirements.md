@@ -103,7 +103,7 @@ MVP can hoan thanh cac nhom chuc nang sau:
 |---|---|
 | Security | JWT, BCrypt, role-based authorization |
 | Maintainability | Modular monolith, module boundary ro rang |
-| Data integrity | Flyway migration, constraint ro rang |
+| Data integrity | MongoDB indexes, validation va unique rule ro rang |
 | Observability | Logging, health check, Swagger |
 | Performance | Pagination, index cho query quan trong |
 | Testability | Unit test va integration test cho module loi |
@@ -116,5 +116,5 @@ MVP can hoan thanh cac nhom chuc nang sau:
 4. CRUD deck va flashcard hoat dong theo quyen.
 5. Learning review cap nhat duoc `review_items` va `review_logs`.
 6. Progress cua learner duoc tinh theo deck.
-7. Migration tao duoc schema tren PostgreSQL sach.
+7. MongoDB tao duoc collections, indexes va seed data tren database sach.
 8. Co seed role va permission co ban.

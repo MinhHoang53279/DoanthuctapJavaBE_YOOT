@@ -1,15 +1,7 @@
 spring:
-  datasource:
-    url: jdbc:h2:mem:flashcard_platform;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    open-in-view: false
-  flyway:
-    enabled: true
+  data:
+    mongodb:
+      uri: ${MONGODB_TEST_URI:mongodb://localhost:27017/flashcard_platform_test}
 
 app:
   security:

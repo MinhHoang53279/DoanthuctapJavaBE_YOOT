@@ -1,13 +1,11 @@
 package com.yoot.flashcard.modules.auth.repository;
 
 import com.yoot.flashcard.modules.auth.entity.RefreshToken;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
 
-public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
+public interface RefreshTokenRepository extends MongoRepository<RefreshToken, Long> {
 
-    @EntityGraph(attributePaths = {"user", "user.roles", "user.roles.permissions", "user.profile"})
     Optional<RefreshToken> findByTokenHash(String tokenHash);
 }

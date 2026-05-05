@@ -12,11 +12,18 @@ import com.yoot.flashcard.modules.identity.entity.UserStatus;
 import com.yoot.flashcard.modules.identity.mapper.UserMapper;
 import com.yoot.flashcard.modules.identity.repository.UserRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 @Service
 public class IdentityService {
@@ -27,14 +34,20 @@ public class IdentityService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final AuditLogService auditLogService;
+    private final MongoTemplate mongoTemplate;
 
-    public IdentityService(UserRepository userRepository, UserMapper userMapper, AuditLogService auditLogService) {
+    public IdentityService(
+            UserRepository userRepository,
+            UserMapper userMapper,
+            AuditLogService auditLogService,
+            MongoTemplate mongoTemplate
+    ) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.auditLogService = auditLogService;
+        this.mongoTemplate = mongoTemplate;
     }
 
-    @Transactional(readOnly = true)
     public PageResponse<UserSummaryResponse> listUsers(int page, int size, String keyword, UserStatus status) {
         Pageable pageable = PageRequest.of(
                 Math.max(page, 0),
@@ -42,18 +55,30 @@ public class IdentityService {
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
         String normalizedKeyword = normalizeKeyword(keyword);
-        Page<UserSummaryResponse> users = userRepository.searchUsers(normalizedKeyword, status, pageable)
-                .map(userMapper::toSummary);
+        List<Criteria> criteria = new ArrayList<>();
+        criteria.add(Criteria.where("deletedAt").is(null));
+        if (status != null) {
+            criteria.add(Criteria.where("status").is(status));
+        }
+        if (normalizedKeyword != null) {
+            Pattern pattern = Pattern.compile(Pattern.quote(normalizedKeyword), Pattern.CASE_INSENSITIVE);
+            criteria.add(new Criteria().orOperator(
+                    Criteria.where("email").regex(pattern),
+                    Criteria.where("username").regex(pattern)
+            ));
+        }
+
+        Query query = new Query(new Criteria().andOperator(criteria.toArray(Criteria[]::new)));
+        long total = mongoTemplate.count(query, User.class);
+        List<User> items = mongoTemplate.find(query.with(pageable), User.class);
+        Page<UserSummaryResponse> users = new PageImpl<>(items, pageable, total).map(userMapper::toSummary);
         return PageResponse.from(users);
     }
 
-    @Transactional(readOnly = true)
     public UserDetailResponse getUser(Long id) {
         User user = findUser(id);
         return userMapper.toDetail(user);
     }
-
-    @Transactional
     public UserDetailResponse updateStatus(Long id, UserStatus status) {
         User user = findUser(id);
         UserStatus previousStatus = user.getStatus();
@@ -67,14 +92,11 @@ public class IdentityService {
         );
         return userMapper.toDetail(saved);
     }
-
-    @Transactional
     public UserDetailResponse updateProfile(Long id, UpdateProfileRequest request) {
         User user = findUser(id);
         UserProfile profile = user.getProfile();
         if (profile == null) {
             profile = new UserProfile();
-            profile.setUser(user);
             user.setProfile(profile);
         }
 

@@ -6,7 +6,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-class FlashcardApplicationTests {
+class FlashcardApplicationTests extends MongoIntegrationTestSupport {
 
     @Test
     void contextLoads() {

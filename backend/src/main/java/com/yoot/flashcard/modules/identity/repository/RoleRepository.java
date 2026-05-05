@@ -1,13 +1,11 @@
 package com.yoot.flashcard.modules.identity.repository;
 
 import com.yoot.flashcard.modules.identity.entity.Role;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
 
-public interface RoleRepository extends JpaRepository<Role, Long> {
+public interface RoleRepository extends MongoRepository<Role, Long> {
 
-    @EntityGraph(attributePaths = "permissions")
     Optional<Role> findByName(String name);
 }

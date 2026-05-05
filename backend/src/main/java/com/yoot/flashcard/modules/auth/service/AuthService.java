@@ -21,7 +21,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -56,8 +55,6 @@ public class AuthService {
         this.jwtProperties = jwtProperties;
         this.refreshTokenService = refreshTokenService;
     }
-
-    @Transactional
     public AuthUserResponse register(RegisterRequest request) {
         String email = request.email().trim().toLowerCase();
         String username = request.username().trim();
@@ -80,14 +77,11 @@ public class AuthService {
         user.getRoles().add(learnerRole);
 
         UserProfile profile = new UserProfile();
-        profile.setUser(user);
         profile.setFullName(request.fullName());
         user.setProfile(profile);
 
         return toAuthUser(userRepository.save(user));
     }
-
-    @Transactional
     public AuthTokenResponse login(LoginRequest request) {
         User user = userRepository.findWithRolesAndPermissionsByUsernameOrEmail(request.usernameOrEmail().trim())
                 .orElseThrow(() -> new BusinessException(HttpStatus.UNAUTHORIZED, INVALID_LOGIN_MESSAGE));
@@ -98,20 +92,14 @@ public class AuthService {
 
         return createTokenResponse(user);
     }
-
-    @Transactional
     public AuthTokenResponse refresh(String rawRefreshToken) {
         RefreshToken refreshToken = refreshTokenService.validateRefreshToken(rawRefreshToken);
         refreshTokenService.revoke(refreshToken);
         return createTokenResponse(refreshToken.getUser());
     }
-
-    @Transactional
     public void logout(String rawRefreshToken) {
         refreshTokenService.revokeForUser(rawRefreshToken, currentUserId());
     }
-
-    @Transactional(readOnly = true)
     public AuthUserResponse currentUser() {
         User user = userRepository.findWithRolesAndPermissionsById(currentUserId())
                 .orElseThrow(() -> new BusinessException(HttpStatus.UNAUTHORIZED, "Unauthorized"));

@@ -3,11 +3,11 @@
 ## Nguyen tac trien khai
 
 1. Khong code khi chua chot thiet ke.
-2. Moi phase phai co migration, entity, repository, service, controller va test neu la code phase.
+2. Moi phase phai co document/collection design, entity, repository, service, controller va test neu la code phase.
 3. Uu tien nho ma dung, khong nhay sang microservices.
 4. Swagger phai cap nhat theo tung API.
 5. Khong hardcode secret production.
-6. Moi thay doi schema di qua Flyway.
+6. Moi thay doi document/index can duoc cap nhat trong entity/config/docs.
 
 ## Phase 0 - Design approval
 
@@ -28,7 +28,7 @@ Dieu kien xong:
 1. Ban doc va dong y MVP scope.
 2. Ban dong y role MVP.
 3. Ban dong y API contract chinh.
-4. Ban dong y database migration plan.
+4. Ban dong y database collection/index plan.
 
 ## Phase 1 - Project foundation
 
@@ -40,7 +40,7 @@ Cong viec:
 2. Chuan hoa config profiles: dev, test, prod.
 3. Them CORS config.
 4. Them Swagger Bearer JWT config.
-5. Them Docker Compose cho PostgreSQL.
+5. Them Docker Compose cho MongoDB.
 6. Them `.env.example`.
 7. Them Actuator health neu can.
 
@@ -48,7 +48,7 @@ Deliverables:
 
 1. Backend boot duoc voi DB local.
 2. Swagger mo duoc.
-3. Flyway chay duoc migration rong hoac foundation.
+3. MongoDB ket noi duoc, auto-index bat va seed data chay duoc.
 
 ## Phase 2 - Auth and Identity
 
@@ -56,8 +56,8 @@ Muc tieu: Hoan thanh dang ky, dang nhap va phan quyen co ban.
 
 Cong viec:
 
-1. Migration cho `users`, `user_profiles`, `roles`, `permissions`, `user_roles`, `role_permissions`.
-2. Migration cho `refresh_tokens`.
+1. Document/collection cho `users`, `roles`, `permissions`.
+2. Document/collection cho `refresh_tokens`.
 3. Seed role `ADMIN`, `CONTENT_MANAGER`, `LEARNER`.
 4. Entity va repository identity.
 5. Register API.
@@ -82,8 +82,8 @@ Muc tieu: Hoan thanh hoc lieu loi.
 
 Cong viec:
 
-1. Migration cho `languages`, `topics`, `tags`.
-2. Migration cho `decks`, `deck_tags`, `flashcards`, `flashcard_media`.
+1. Document/collection cho `languages`, `topics`, `tags`.
+2. Document/collection cho `decks`, `flashcards`.
 3. Seed languages va topics mau.
 4. CRUD languages cho admin.
 5. CRUD topics cho admin/content manager.
@@ -106,8 +106,8 @@ Muc tieu: Hoan thanh phan hoc va on tap.
 
 Cong viec:
 
-1. Migration cho `study_sessions`, `review_items`, `review_logs`.
-2. Migration cho `learning_progress`, `streaks`.
+1. Document/collection cho `study_sessions`, `review_items`, `review_logs`.
+2. Document/collection cho `learning_progress`, `streaks`.
 3. Start study session API.
 4. Get reviews today API.
 5. Submit review API.
@@ -150,7 +150,7 @@ Muc tieu: Them quiz dua tren flashcard.
 
 Cong viec:
 
-1. Migration quiz schema.
+1. Document/collection quiz schema.
 2. Generate quiz tu deck.
 3. Submit quiz attempt.
 4. Score quiz.
@@ -168,7 +168,7 @@ Muc tieu: Ho tro giao vien va lop hoc.
 
 Cong viec:
 
-1. Migration classroom schema.
+1. Document/collection classroom schema.
 2. Instructor tao class.
 3. Add learner vao class.
 4. Assign deck cho class.
@@ -218,7 +218,7 @@ Thu tu co the cat giam:
 | Scope qua rong | Chot MVP den Phase 4 truoc |
 | Security phuc tap | Role-based truoc, permission-based sau |
 | Learning algorithm kho test | Dung thuat toan MVP don gian |
-| Database thay doi nhieu | Chot migration plan truoc khi code |
+| Database thay doi nhieu | Chot collection/index plan truoc khi code |
 | Swagger thieu ro rang | Viet API contract truoc |
 | Frontend chua co | Swagger va Postman co the test backend |
 

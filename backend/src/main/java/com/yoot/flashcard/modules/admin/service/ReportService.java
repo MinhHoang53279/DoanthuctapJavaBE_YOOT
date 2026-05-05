@@ -17,15 +17,20 @@ import com.yoot.flashcard.modules.content.repository.FlashcardRepository;
 import com.yoot.flashcard.modules.identity.entity.User;
 import com.yoot.flashcard.modules.identity.repository.UserRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ReportService {
@@ -40,6 +45,7 @@ public class ReportService {
     private final AdminMapper adminMapper;
     private final AuditLogService auditLogService;
     private final Clock clock;
+    private final MongoTemplate mongoTemplate;
 
     public ReportService(
             ReportRepository reportRepository,
@@ -48,7 +54,8 @@ public class ReportService {
             FlashcardRepository flashcardRepository,
             AdminMapper adminMapper,
             AuditLogService auditLogService,
-            Clock clock
+            Clock clock,
+            MongoTemplate mongoTemplate
     ) {
         this.reportRepository = reportRepository;
         this.userRepository = userRepository;
@@ -57,9 +64,9 @@ public class ReportService {
         this.adminMapper = adminMapper;
         this.auditLogService = auditLogService;
         this.clock = clock;
+        this.mongoTemplate = mongoTemplate;
     }
 
-    @Transactional
     public ReportResponse createReport(CreateReportRequest request) {
         User reporter = requireCurrentUser();
         validateTarget(request.targetType(), request.targetId());
@@ -81,20 +88,28 @@ public class ReportService {
         );
         return adminMapper.toReport(saved);
     }
-
-    @Transactional(readOnly = true)
     public PageResponse<ReportResponse> listReports(int page, int size, ReportTargetType targetType, ReportStatus status) {
         Pageable pageable = PageRequest.of(
                 Math.max(page, 0),
                 normalizeSize(size),
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
-        Page<ReportResponse> reports = reportRepository.search(targetType, status, pageable)
-                .map(adminMapper::toReport);
+        List<Criteria> criteria = new ArrayList<>();
+        if (targetType != null) {
+            criteria.add(Criteria.where("targetType").is(targetType));
+        }
+        if (status != null) {
+            criteria.add(Criteria.where("status").is(status));
+        }
+
+        Query query = criteria.isEmpty()
+                ? new Query()
+                : new Query(new Criteria().andOperator(criteria.toArray(Criteria[]::new)));
+        long total = mongoTemplate.count(query, Report.class);
+        List<Report> items = mongoTemplate.find(query.with(pageable), Report.class);
+        Page<ReportResponse> reports = new PageImpl<>(items, pageable, total).map(adminMapper::toReport);
         return PageResponse.from(reports);
     }
-
-    @Transactional
     public ReportResponse updateStatus(Long id, UpdateReportStatusRequest request) {
         User actor = requireCurrentUser();
         Report report = reportRepository.findById(id)

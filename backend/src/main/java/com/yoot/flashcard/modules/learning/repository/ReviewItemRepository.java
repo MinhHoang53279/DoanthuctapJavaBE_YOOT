@@ -1,48 +1,24 @@
 package com.yoot.flashcard.modules.learning.repository;
 
-import com.yoot.flashcard.modules.learning.entity.MasteryLevel;
 import com.yoot.flashcard.modules.learning.entity.ReviewItem;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface ReviewItemRepository extends JpaRepository<ReviewItem, Long> {
+public interface ReviewItemRepository extends MongoRepository<ReviewItem, Long> {
 
+    @Query("{ 'user.$id': ?0, 'flashcard.$id': ?1 }")
     Optional<ReviewItem> findByUserIdAndFlashcardId(Long userId, Long flashcardId);
 
-    @EntityGraph(attributePaths = {"flashcard", "flashcard.deck"})
-    @Query("""
-            select ri from ReviewItem ri
-            where ri.user.id = :userId
-              and ri.flashcard.active = true
-              and ri.flashcard.deletedAt is null
-              and ri.nextReviewAt <= :now
-            order by ri.nextReviewAt asc
-            """)
-    List<ReviewItem> findDueItems(@Param("userId") Long userId, @Param("now") LocalDateTime now);
+    @Query(value = "{ 'user.$id': ?0, 'nextReviewAt': { $lte: ?1 } }", sort = "{ 'nextReviewAt': 1 }")
+    List<ReviewItem> findDueItems(Long userId, LocalDateTime now);
 
-    @Query("""
-            select count(ri) from ReviewItem ri
-            where ri.user.id = :userId
-              and ri.flashcard.deck.id = :deckId
-              and ri.repetitionCount > 0
-            """)
-    long countLearned(@Param("userId") Long userId, @Param("deckId") Long deckId);
+    @Query("{ 'user.$id': ?0 }")
+    List<ReviewItem> findByUserId(Long userId);
 
-    @Query("""
-            select count(ri) from ReviewItem ri
-            where ri.user.id = :userId
-              and ri.flashcard.deck.id = :deckId
-              and ri.masteryLevel = :masteryLevel
-            """)
-    long countMastered(
-            @Param("userId") Long userId,
-            @Param("deckId") Long deckId,
-            @Param("masteryLevel") MasteryLevel masteryLevel
-    );
+    @Query("{ 'user.$id': ?0, 'flashcard.$id': { $in: ?1 } }")
+    List<ReviewItem> findByUserIdAndFlashcardIds(Long userId, List<Long> flashcardIds);
 }

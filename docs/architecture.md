@@ -61,7 +61,7 @@ Moi module nen theo cau truc:
 2. `dto`
    - request/response object
 3. `entity`
-   - JPA entity
+   - MongoDB document/entity
 4. `repository`
    - Spring Data repository
 5. `service`
@@ -91,14 +91,14 @@ Cross-cutting concerns di qua `common`:
 4. Mapper chuyen doi du lieu, tranh lap code.
 5. Global exception handler tra response thong nhat.
 6. Security dua tren role/permission.
-7. Migration database quan ly bang Flyway.
+7. MongoDB collections, indexes va seed data duoc quan ly bang Spring Data MongoDB config/initializer.
 
 ## Roadmap code theo giai doan
 
 ### Phase 1 - Foundation
 
 1. Khoi tao Spring Boot project
-2. Config PostgreSQL
+2. Config MongoDB
 3. Config response wrapper va exception handler
 4. Config Spring Security + JWT
 5. Hoan thanh `auth` + `identity`

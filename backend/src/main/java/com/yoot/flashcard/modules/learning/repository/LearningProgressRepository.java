@@ -1,17 +1,17 @@
 package com.yoot.flashcard.modules.learning.repository;
 
 import com.yoot.flashcard.modules.learning.entity.LearningProgress;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface LearningProgressRepository extends JpaRepository<LearningProgress, Long> {
+public interface LearningProgressRepository extends MongoRepository<LearningProgress, Long> {
 
-    @EntityGraph(attributePaths = "deck")
+    @Query("{ 'user.$id': ?0, 'deck.$id': ?1 }")
     Optional<LearningProgress> findByUserIdAndDeckId(Long userId, Long deckId);
 
-    @EntityGraph(attributePaths = "deck")
+    @Query(value = "{ 'user.$id': ?0 }", sort = "{ 'updatedAt': -1 }")
     List<LearningProgress> findByUserIdOrderByUpdatedAtDesc(Long userId);
 }

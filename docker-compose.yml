@@ -1,20 +1,18 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: flashcard-platform-postgres
+  mongodb:
+    image: mongo:7
+    container_name: flashcard-platform-mongodb
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-flashcard_platform}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-flashcard_platform}
     ports:
-      - "5432:5432"
+      - "${MONGO_PORT:-27017}:27017"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - mongodb-data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-flashcard_platform}"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  postgres-data:
+  mongodb-data:

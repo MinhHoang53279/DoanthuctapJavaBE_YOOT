@@ -29,14 +29,17 @@ import com.yoot.flashcard.modules.learning.repository.ReviewItemRepository;
 import com.yoot.flashcard.modules.learning.repository.ReviewLogRepository;
 import com.yoot.flashcard.modules.learning.repository.StreakRepository;
 import com.yoot.flashcard.modules.learning.repository.StudySessionRepository;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class LearningService {
@@ -87,8 +90,6 @@ public class LearningService {
         this.streakService = streakService;
         this.clock = clock;
     }
-
-    @Transactional
     public StudySessionResponse startStudySession(Long deckId, Integer limit) {
         Long userId = accessService.requireCurrentUserId();
         Deck deck = deckService.findDeck(deckId);
@@ -96,12 +97,20 @@ public class LearningService {
         User user = findUser(userId);
         LocalDateTime now = LocalDateTime.now(clock);
 
-        List<Flashcard> cards = flashcardRepository.findCardsForStudySession(
-                userId,
+        List<Flashcard> activeCards = flashcardRepository.findActiveByDeckId(
                 deckId,
-                now,
-                PageRequest.of(0, normalizeLimit(limit))
+                Sort.by(Sort.Direction.ASC, "cardOrder").and(Sort.by(Sort.Direction.ASC, "id"))
         );
+        Map<Long, ReviewItem> reviewItemsByFlashcardId = reviewItemRepository.findByUserIdAndFlashcardIds(
+                        userId,
+                        activeCards.stream().map(Flashcard::getId).toList()
+                ).stream()
+                .collect(Collectors.toMap(item -> item.getFlashcard().getId(), Function.identity()));
+        List<Flashcard> cards = activeCards.stream()
+                .filter(card -> isDueOrNew(reviewItemsByFlashcardId.get(card.getId()), now))
+                .sorted(studyCardComparator(reviewItemsByFlashcardId))
+                .limit(normalizeLimit(limit))
+                .toList();
 
         StudySession session = new StudySession();
         session.setUser(user);
@@ -117,18 +126,15 @@ public class LearningService {
                 cards.stream().map(card -> toStudyCard(userId, card)).toList()
         );
     }
-
-    @Transactional(readOnly = true)
     public List<StudyCardResponse> reviewsToday(Integer limit) {
         Long userId = accessService.requireCurrentUserId();
         LocalDateTime now = LocalDateTime.now(clock);
         return reviewItemRepository.findDueItems(userId, now).stream()
+                .filter(item -> item.getFlashcard().isActive() && item.getFlashcard().getDeletedAt() == null)
                 .limit(normalizeLimit(limit))
                 .map(item -> toStudyCard(item.getFlashcard(), item.getMasteryLevel()))
                 .toList();
     }
-
-    @Transactional
     public ReviewResultResponse submitReview(Long flashcardId, SubmitReviewRequest request) {
         Long userId = accessService.requireCurrentUserId();
         User user = findUser(userId);
@@ -173,8 +179,6 @@ public class LearningService {
                 reviewItem.getNextReviewAt()
         );
     }
-
-    @Transactional
     public void finishStudySession(Long sessionId) {
         Long userId = accessService.requireCurrentUserId();
         StudySession session = studySessionRepository.findByIdAndUserId(sessionId, userId)
@@ -186,8 +190,6 @@ public class LearningService {
         session.setEndedAt(LocalDateTime.now(clock));
         studySessionRepository.save(session);
     }
-
-    @Transactional(readOnly = true)
     public LearningOverviewResponse myProgress() {
         Long userId = accessService.requireCurrentUserId();
         List<LearningProgressResponse> decks = learningProgressRepository.findByUserIdOrderByUpdatedAtDesc(userId)
@@ -201,8 +203,6 @@ public class LearningService {
                 streak == null ? 0 : streak.getBestStreakDays()
         );
     }
-
-    @Transactional(readOnly = true)
     public LearningProgressResponse progressByDeck(Long deckId) {
         Long userId = accessService.requireCurrentUserId();
         LearningProgress progress = learningProgressRepository.findByUserIdAndDeckId(userId, deckId)
@@ -244,6 +244,31 @@ public class LearningService {
     private User findUser(Long userId) {
         return userRepository.findWithRolesById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    private boolean isDueOrNew(ReviewItem reviewItem, LocalDateTime now) {
+        return reviewItem == null
+                || reviewItem.getNextReviewAt() == null
+                || !reviewItem.getNextReviewAt().isAfter(now);
+    }
+
+    private Comparator<Flashcard> studyCardComparator(Map<Long, ReviewItem> reviewItemsByFlashcardId) {
+        return Comparator
+                .comparing((Flashcard card) -> reviewRank(reviewItemsByFlashcardId.get(card.getId())))
+                .thenComparing(card -> nextReviewAt(reviewItemsByFlashcardId.get(card.getId())), Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparingInt(Flashcard::getCardOrder)
+                .thenComparing(Flashcard::getId);
+    }
+
+    private int reviewRank(ReviewItem reviewItem) {
+        if (reviewItem == null || reviewItem.getNextReviewAt() == null) {
+            return 1;
+        }
+        return 0;
+    }
+
+    private LocalDateTime nextReviewAt(ReviewItem reviewItem) {
+        return reviewItem == null ? null : reviewItem.getNextReviewAt();
     }
 
     private int normalizeLimit(Integer limit) {

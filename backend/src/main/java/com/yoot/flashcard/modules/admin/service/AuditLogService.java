@@ -9,11 +9,17 @@ import com.yoot.flashcard.modules.admin.repository.AuditLogRepository;
 import com.yoot.flashcard.modules.identity.entity.User;
 import com.yoot.flashcard.modules.identity.repository.UserRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class AuditLogService {
@@ -24,26 +30,26 @@ public class AuditLogService {
     private final AuditLogRepository auditLogRepository;
     private final UserRepository userRepository;
     private final AdminMapper adminMapper;
+    private final MongoTemplate mongoTemplate;
 
     public AuditLogService(
             AuditLogRepository auditLogRepository,
             UserRepository userRepository,
-            AdminMapper adminMapper
+            AdminMapper adminMapper,
+            MongoTemplate mongoTemplate
     ) {
         this.auditLogRepository = auditLogRepository;
         this.userRepository = userRepository;
         this.adminMapper = adminMapper;
+        this.mongoTemplate = mongoTemplate;
     }
 
-    @Transactional
     public void recordCurrentActor(String action, String resourceType, Long resourceId, String details) {
         User actor = SecurityUtils.currentUserId()
                 .flatMap(userRepository::findById)
                 .orElse(null);
         record(actor, action, resourceType, resourceId, details);
     }
-
-    @Transactional
     public void record(User actor, String action, String resourceType, Long resourceId, String details) {
         AuditLog auditLog = new AuditLog();
         auditLog.setActor(actor);
@@ -53,8 +59,6 @@ public class AuditLogService {
         auditLog.setDetails(details);
         auditLogRepository.save(auditLog);
     }
-
-    @Transactional(readOnly = true)
     public PageResponse<AuditLogResponse> listAuditLogs(
             int page,
             int size,
@@ -67,12 +71,25 @@ public class AuditLogService {
                 normalizeSize(size),
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
-        Page<AuditLogResponse> auditLogs = auditLogRepository.search(
-                normalize(action),
-                normalize(resourceType),
-                resourceId,
-                pageable
-        ).map(adminMapper::toAuditLog);
+        List<Criteria> criteria = new ArrayList<>();
+        String normalizedAction = normalize(action);
+        String normalizedResourceType = normalize(resourceType);
+        if (normalizedAction != null) {
+            criteria.add(Criteria.where("action").is(normalizedAction));
+        }
+        if (normalizedResourceType != null) {
+            criteria.add(Criteria.where("resourceType").is(normalizedResourceType));
+        }
+        if (resourceId != null) {
+            criteria.add(Criteria.where("resourceId").is(resourceId));
+        }
+
+        Query query = criteria.isEmpty()
+                ? new Query()
+                : new Query(new Criteria().andOperator(criteria.toArray(Criteria[]::new)));
+        long total = mongoTemplate.count(query, AuditLog.class);
+        List<AuditLog> items = mongoTemplate.find(query.with(pageable), AuditLog.class);
+        Page<AuditLogResponse> auditLogs = new PageImpl<>(items, pageable, total).map(adminMapper::toAuditLog);
         return PageResponse.from(auditLogs);
     }
 

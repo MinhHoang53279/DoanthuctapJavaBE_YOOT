@@ -15,7 +15,6 @@ import com.yoot.flashcard.modules.content.repository.LanguageRepository;
 import com.yoot.flashcard.modules.content.repository.TagRepository;
 import com.yoot.flashcard.modules.content.repository.TopicRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -38,15 +37,11 @@ public class CatalogService {
         this.tagRepository = tagRepository;
         this.contentMapper = contentMapper;
     }
-
-    @Transactional(readOnly = true)
     public List<LanguageResponse> listLanguages() {
         return languageRepository.findByActiveTrueOrderByNameAsc().stream()
                 .map(contentMapper::toLanguage)
                 .toList();
     }
-
-    @Transactional
     public LanguageResponse createLanguage(LanguageRequest request) {
         String code = request.code().trim().toLowerCase();
         if (languageRepository.existsByCode(code)) {
@@ -58,15 +53,11 @@ public class CatalogService {
         language.setName(request.name().trim());
         return contentMapper.toLanguage(languageRepository.save(language));
     }
-
-    @Transactional(readOnly = true)
     public List<TopicResponse> listTopics() {
         return topicRepository.findByActiveTrueOrderByNameAsc().stream()
                 .map(contentMapper::toTopic)
                 .toList();
     }
-
-    @Transactional
     public TopicResponse createTopic(TopicRequest request) {
         String name = request.name().trim();
         if (topicRepository.existsByName(name)) {
@@ -78,15 +69,11 @@ public class CatalogService {
         topic.setDescription(request.description());
         return contentMapper.toTopic(topicRepository.save(topic));
     }
-
-    @Transactional(readOnly = true)
     public List<TagResponse> listTags() {
         return tagRepository.findAllByOrderByNameAsc().stream()
                 .map(contentMapper::toTag)
                 .toList();
     }
-
-    @Transactional
     public TagResponse createTag(TagRequest request) {
         String name = request.name().trim();
         if (tagRepository.existsByName(name)) {

@@ -12,7 +12,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -38,8 +37,6 @@ public class FlashcardService {
         this.accessService = accessService;
         this.contentMapper = contentMapper;
     }
-
-    @Transactional(readOnly = true)
     public PageResponse<FlashcardResponse> listFlashcards(Long deckId, int page, int size) {
         Deck deck = deckService.findDeck(deckId);
         accessService.requireDeckRead(deck);
@@ -48,8 +45,6 @@ public class FlashcardService {
                 .map(contentMapper::toFlashcard);
         return PageResponse.from(flashcards);
     }
-
-    @Transactional
     public FlashcardResponse createFlashcard(Long deckId, FlashcardRequest request) {
         Deck deck = deckService.findDeck(deckId);
         accessService.requireDeckManage(deck);
@@ -59,16 +54,12 @@ public class FlashcardService {
         applyRequest(flashcard, request);
         return contentMapper.toFlashcard(flashcardRepository.save(flashcard));
     }
-
-    @Transactional
     public FlashcardResponse updateFlashcard(Long id, FlashcardRequest request) {
         Flashcard flashcard = findFlashcard(id);
         accessService.requireDeckManage(flashcard.getDeck());
         applyRequest(flashcard, request);
         return contentMapper.toFlashcard(flashcardRepository.save(flashcard));
     }
-
-    @Transactional
     public void deleteFlashcard(Long id) {
         Flashcard flashcard = findFlashcard(id);
         accessService.requireDeckManage(flashcard.getDeck());
