@@ -150,7 +150,7 @@ Muc tieu: Them quiz dua tren flashcard.
 
 Cong viec:
 
-1. Document/collection quiz schema.
+1. Document/collection cho quiz.
 2. Generate quiz tu deck.
 3. Submit quiz attempt.
 4. Score quiz.
@@ -168,7 +168,7 @@ Muc tieu: Ho tro giao vien va lop hoc.
 
 Cong viec:
 
-1. Document/collection classroom schema.
+1. Document/collection cho classroom.
 2. Instructor tao class.
 3. Add learner vao class.
 4. Assign deck cho class.
@@ -226,7 +226,7 @@ Thu tu co the cat giam:
 
 1. Ban da doc `product-requirements.md`.
 2. Ban da dong y role MVP trong `business-rules.md`.
-3. Ban da dong y schema trong `database-design.md`.
+3. Ban da dong y collection design trong `database-design.md`.
 4. Ban da dong y API trong `api-contract.md`.
 5. Ban da dong y JWT/refresh token trong `security-design.md`.
 6. Ban da dong y thuat toan review trong `learning-engine.md`.

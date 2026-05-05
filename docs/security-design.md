@@ -215,9 +215,8 @@ Khong hardcode cac gia tri sau:
 
 | Bien | Mo ta |
 |---|---|
-| `DB_URL` | JDBC URL |
-| `DB_USERNAME` | Database username |
-| `DB_PASSWORD` | Database password |
+| `MONGODB_URI` | MongoDB connection URI |
+| `MONGODB_TEST_URI` | MongoDB connection URI cho test, neu can override |
 | `JWT_SECRET` | Secret ky JWT |
 | `ACCESS_TOKEN_EXPIRATION_MS` | Han access token |
 | `REFRESH_TOKEN_EXPIRATION_MS` | Han refresh token |

@@ -1,6 +1,6 @@
 # MongoDB Collection Map
 
-Tai lieu nay mo ta quan he du lieu o muc collection cho MVP MongoDB. Project hien tai dung collection/document design thay cho relational schema.
+Tai lieu nay mo ta quan he du lieu o muc collection cho MVP MongoDB. Project hien tai dung collection/document design.
 
 ## Tong quan collection
 
