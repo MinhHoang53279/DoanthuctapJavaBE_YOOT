@@ -1,0 +1,565 @@
+{
+  "info": {
+    "_postman_id": "8f8c0001-4f7d-4e9e-9d1a-000100010001",
+    "name": "01 - Minh learner auth lifecycle",
+    "description": "Persona Minh: a new learner signs up, logs in, rotates refresh token, checks current user, and logs out. Count: 27 Postman pm.test test cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "password",
+      "value": "Password@123"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Prepare Minh fresh persona run",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "health"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const runId = Date.now().toString();",
+              "pm.collectionVariables.set(\"runId\", runId);",
+              "pm.collectionVariables.set(\"minhEmail\", \"minh.\" + runId + \"@example.com\");",
+              "pm.collectionVariables.set(\"minhUsername\", \"minh_\" + runId);",
+              "pm.collectionVariables.set(\"minhFullName\", \"Minh \" + runId);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"prepare returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"prepare confirms auth module\", function () { pm.expect(json.data.module).to.eql(\"auth\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 - Register Minh as learner",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{minhEmail}}\",\n  \"username\": \"{{minhUsername}}\",\n  \"password\": \"{{password}}\",\n  \"fullName\": \"{{minhFullName}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"register creates learner with HTTP 201\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"register response is successful\", function () { pm.expect(json.success).to.eql(true); });",
+              "pm.test(\"register stores Minh user id and LEARNER role\", function () {",
+              "  pm.collectionVariables.set(\"minhUserId\", json.data.id);",
+              "  pm.expect(json.data.roles).to.include(\"LEARNER\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Duplicate email is rejected",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{minhEmail}}\",\n  \"username\": \"copy_{{minhUsername}}\",\n  \"password\": \"{{password}}\",\n  \"fullName\": \"Copy Minh\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"duplicate email returns HTTP 409\", function () { pm.response.to.have.status(409); });",
+              "pm.test(\"duplicate email response is unsuccessful\", function () { pm.expect(json.success).to.eql(false); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Invalid email validation",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"not-an-email\",\n  \"username\": \"bad_{{minhUsername}}\",\n  \"password\": \"{{password}}\",\n  \"fullName\": \"Bad Email\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"invalid email returns HTTP 400\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"invalid email has validation payload\", function () { pm.expect(json.data).to.be.an(\"object\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Login Minh by email",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrEmail\": \"{{minhEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"login returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"login returns bearer tokens\", function () {",
+              "  pm.collectionVariables.set(\"minhAccessToken\", json.data.accessToken);",
+              "  pm.collectionVariables.set(\"minhRefreshToken\", json.data.refreshToken);",
+              "  pm.expect(json.data.tokenType).to.eql(\"Bearer\");",
+              "});",
+              "pm.test(\"login access token is not blank\", function () { pm.expect(json.data.accessToken).to.not.be.empty; });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Current user without token is blocked",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"current user without token returns HTTP 401\", function () { pm.response.to.have.status(401); });",
+              "pm.test(\"current user without token is unsuccessful\", function () { pm.expect(json.success).to.eql(false); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Current user with Minh token",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{minhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"current user returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"current user matches Minh email\", function () { pm.expect(json.data.email).to.eql(pm.collectionVariables.get(\"minhEmail\")); });",
+              "pm.test(\"current user includes LEARNER role\", function () { pm.expect(json.data.roles).to.include(\"LEARNER\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Refresh token rotates credentials",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "refresh"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{minhRefreshToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"refresh returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"refresh issues a new access token\", function () { pm.expect(json.data.accessToken).to.not.be.empty; });",
+              "pm.test(\"refresh rotates refresh token\", function () {",
+              "  pm.collectionVariables.set(\"minhOldRefreshToken\", pm.collectionVariables.get(\"minhRefreshToken\"));",
+              "  pm.expect(json.data.refreshToken).to.not.eql(pm.collectionVariables.get(\"minhRefreshToken\"));",
+              "  pm.collectionVariables.set(\"minhAccessToken\", json.data.accessToken);",
+              "  pm.collectionVariables.set(\"minhRefreshToken\", json.data.refreshToken);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Old refresh token cannot be reused",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "refresh"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{minhOldRefreshToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"old refresh returns HTTP 401\", function () { pm.response.to.have.status(401); });",
+              "pm.test(\"old refresh is unsuccessful\", function () { pm.expect(json.success).to.eql(false); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Logout Minh",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/logout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "logout"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{minhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{minhRefreshToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"logout returns HTTP 204\", function () { pm.response.to.have.status(204); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Refresh after logout is rejected",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "refresh"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{minhRefreshToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"logged out refresh returns HTTP 401\", function () { pm.response.to.have.status(401); });",
+              "pm.test(\"logged out refresh is unsuccessful\", function () { pm.expect(json.success).to.eql(false); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Wrong password login is rejected",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrEmail\": \"{{minhEmail}}\",\n  \"password\": \"WrongPassword@123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"wrong password returns HTTP 401\", function () { pm.response.to.have.status(401); });",
+              "pm.test(\"wrong password response is unsuccessful\", function () { pm.expect(json.success).to.eql(false); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

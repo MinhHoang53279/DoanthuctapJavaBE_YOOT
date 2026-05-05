@@ -1,0 +1,853 @@
+{
+  "info": {
+    "_postman_id": "8f8c0003-4f7d-4e9e-9d1a-000300030003",
+    "name": "03 - Linh content manager curation",
+    "description": "Persona Linh: a content manager curates public content, approves one deck, rejects another, and verifies catalog visibility. Count: 27 Postman pm.test test cases. Requires managerEmail/managerPassword variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "password",
+      "value": "Password@123"
+    },
+    {
+      "key": "managerEmail",
+      "value": "manager@example.com"
+    },
+    {
+      "key": "managerPassword",
+      "value": "Password@123"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Prepare Linh fresh persona run",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/content/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "content",
+            "health"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const runId = Date.now().toString();",
+              "pm.collectionVariables.set(\"runId\", runId);",
+              "pm.collectionVariables.set(\"linhEmail\", \"linh.\" + runId + \"@example.com\");",
+              "pm.collectionVariables.set(\"linhUsername\", \"linh_\" + runId);",
+              "pm.collectionVariables.set(\"linhFullName\", \"Linh \" + runId);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"prepare returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"prepare confirms content module\", function () { pm.expect(json.data.module).to.eql(\"content\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 - Login Linh content manager",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrEmail\": \"{{managerEmail}}\",\n  \"password\": \"{{managerPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"manager login returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"manager access token is stored\", function () {",
+              "  pm.collectionVariables.set(\"managerAccessToken\", json.data.accessToken);",
+              "  pm.expect(json.data.accessToken).to.not.be.empty;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Verify Linh manager role",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{managerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"manager current user returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"manager has CONTENT_MANAGER compatible role\", function () {",
+              "  pm.expect(json.data.roles.join(\",\")).to.match(/CONTENT_MANAGER|ADMIN|SUPER_ADMIN/);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Create curation tag",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/tags",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "tags"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{managerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"curation-{{runId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"manager can create tag with HTTP 201\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"curation tag id is stored\", function () { pm.collectionVariables.set(\"managerTagId\", json.data.id); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - List tags includes curation tag",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/tags",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "tags"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"tag catalog includes manager tag\", function () {",
+              "  const items = pm.response.json().data;",
+              "  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get(\"managerTagId\"))).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Create curation topic",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/topics",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "topics"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{managerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Curation Topic {{runId}}\",\n  \"description\": \"Topic created by Linh in Postman automation\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"manager can create topic with HTTP 201\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"curation topic id is stored\", function () { pm.collectionVariables.set(\"managerTopicId\", json.data.id); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Create public deck for approval",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{managerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Linh Approved Public Deck {{runId}}\",\n  \"description\": \"A public deck curated by Linh\",\n  \"topicId\": \"{{managerTopicId}}\",\n  \"visibility\": \"PUBLIC\",\n  \"tagIds\": [\n    \"{{managerTagId}}\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"manager public deck create returns HTTP 201\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"manager public deck starts as DRAFT\", function () {",
+              "  pm.collectionVariables.set(\"managerApprovedDeckId\", json.data.id);",
+              "  pm.expect(json.data.status).to.eql(\"DRAFT\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Add curated flashcard",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{managerApprovedDeckId}}/flashcards",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{managerApprovedDeckId}}",
+            "flashcards"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{managerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"frontText\": \"curated phrase\",\n  \"backText\": \"cum tu duoc bien tap\",\n  \"difficultyLevel\": \"MEDIUM\",\n  \"cardOrder\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"manager can add flashcard with HTTP 201\", function () { pm.response.to.have.status(201); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Submit approved deck for review",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{managerApprovedDeckId}}/submit-review",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{managerApprovedDeckId}}",
+            "submit-review"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{managerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"submitted deck becomes PENDING\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(json.data.status).to.eql(\"PENDING\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Approve curated deck",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/decks/{{managerApprovedDeckId}}/approve",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "decks",
+            "{{managerApprovedDeckId}}",
+            "approve"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{managerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"manager approval returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"approved deck status is APPROVED\", function () { pm.expect(json.data.status).to.eql(\"APPROVED\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Public catalog shows approved deck",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks?keyword=Linh%20Approved&page=0&size=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks?keyword=Linh%20Approved&page=0&size=10"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const items = pm.response.json().data.items;",
+              "pm.test(\"approved public deck is visible anonymously\", function () {",
+              "  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get(\"managerApprovedDeckId\"))).to.eql(true);",
+              "});",
+              "pm.test(\"public catalog request returns HTTP 200\", function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Create public deck for rejection",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{managerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Linh Rejected Public Deck {{runId}}\",\n  \"description\": \"Rejected in automation\",\n  \"visibility\": \"PUBLIC\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"rejection candidate create returns HTTP 201\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(201);",
+              "  pm.collectionVariables.set(\"managerRejectedDeckId\", json.data.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - Submit rejection candidate",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{managerRejectedDeckId}}/submit-review",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{managerRejectedDeckId}}",
+            "submit-review"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{managerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"rejection candidate becomes PENDING\", function () { pm.expect(pm.response.json().data.status).to.eql(\"PENDING\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Reject curated deck candidate",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/admin/decks/{{managerRejectedDeckId}}/reject",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "decks",
+            "{{managerRejectedDeckId}}",
+            "reject"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{managerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"Translations need a second review\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"manager rejection returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"rejected deck status is REJECTED\", function () { pm.expect(json.data.status).to.eql(\"REJECTED\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 - Anonymous catalog hides rejected deck",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks?keyword=Linh%20Rejected&page=0&size=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks?keyword=Linh%20Rejected&page=0&size=10"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"rejected deck is hidden from anonymous catalog\", function () {",
+              "  const items = pm.response.json().data.items;",
+              "  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get(\"managerRejectedDeckId\"))).to.eql(false);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 - Manager can still find rejected own deck",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks?keyword=Linh%20Rejected&page=0&size=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks?keyword=Linh%20Rejected&page=0&size=10"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{managerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"manager catalog sees rejected deck\", function () {",
+              "  const items = pm.response.json().data.items;",
+              "  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get(\"managerRejectedDeckId\"))).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 - Rework rejected deck to private draft",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{managerRejectedDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{managerRejectedDeckId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{managerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Linh Reworked Private Deck {{runId}}\",\n  \"description\": \"Reworked after rejection\",\n  \"visibility\": \"PRIVATE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"reworked deck returns HTTP 200 and DRAFT\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(json.data.status).to.eql(\"DRAFT\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 - Delete reworked rejected deck",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{managerRejectedDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{managerRejectedDeckId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{managerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"manager delete reworked deck returns HTTP 204\", function () { pm.response.to.have.status(204); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

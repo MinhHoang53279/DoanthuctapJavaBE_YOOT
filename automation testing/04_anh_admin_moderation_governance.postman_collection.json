@@ -1,0 +1,920 @@
+{
+  "info": {
+    "_postman_id": "8f8c0004-4f7d-4e9e-9d1a-000400040004",
+    "name": "04 - Anh admin moderation governance",
+    "description": "Persona Anh: an admin verifies governance, locks/unlocks a learner, approves content, handles reports, and checks audit logs. Count: 25 Postman pm.test test cases. Requires adminEmail/adminPassword variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "password",
+      "value": "Password@123"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@example.com"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Password@123"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Prepare admin run and confirm protected health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "health"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const runId = Date.now().toString();",
+              "pm.collectionVariables.set(\"runId\", runId);",
+              "pm.collectionVariables.set(\"targetEmail\", \"target.\" + runId + \"@example.com\");",
+              "pm.collectionVariables.set(\"targetUsername\", \"target_\" + runId);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"admin health without token is protected\", function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 - Login Anh admin",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrEmail\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"admin login returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"admin token is stored\", function () { pm.collectionVariables.set(\"adminAccessToken\", json.data.accessToken); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Admin health with token",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "health"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"admin health with token returns HTTP 200\", function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Verify Anh admin role",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"admin current user has admin-compatible role\", function () {",
+              "  const roles = pm.response.json().data.roles.join(\",\");",
+              "  pm.expect(roles).to.match(/ADMIN|SUPER_ADMIN/);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Read admin dashboard",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/dashboard",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "dashboard"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"admin dashboard returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"admin dashboard has user and deck counts\", function () {",
+              "  pm.expect(json.data.totalUsers).to.be.a(\"number\");",
+              "  pm.expect(json.data.totalDecks).to.be.a(\"number\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Register target learner",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{targetEmail}}\",\n  \"username\": \"{{targetUsername}}\",\n  \"password\": \"{{password}}\",\n  \"fullName\": \"Target Learner {{runId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"target learner register returns HTTP 201\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(201);",
+              "  pm.collectionVariables.set(\"targetUserId\", json.data.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Admin lists target user",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users?keyword={{targetUsername}}&page=0&size=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users?keyword={{targetUsername}}&page=0&size=10"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"user list contains target learner\", function () {",
+              "  const items = pm.response.json().data.items;",
+              "  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get(\"targetUserId\"))).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Admin opens target user detail",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users/{{targetUserId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users",
+            "{{targetUserId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"target detail returns ACTIVE user\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(json.data.status).to.eql(\"ACTIVE\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Admin locks target user",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/users/{{targetUserId}}/lock",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "users",
+            "{{targetUserId}}",
+            "lock"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"lock user returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"locked user status is LOCKED\", function () { pm.expect(json.data.status).to.eql(\"LOCKED\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Locked target cannot login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrEmail\": \"{{targetEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"locked target login returns HTTP 401\", function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Admin unlocks target user",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/users/{{targetUserId}}/unlock",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "users",
+            "{{targetUserId}}",
+            "unlock"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"unlock user returns ACTIVE status\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(json.data.status).to.eql(\"ACTIVE\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Target login works after unlock",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrEmail\": \"{{targetEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"unlocked target login returns HTTP 200\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(200);",
+              "  pm.collectionVariables.set(\"targetAccessToken\", json.data.accessToken);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - Admin creates public deck to approve",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Anh Admin Public Deck {{runId}}\",\n  \"description\": \"Created by admin automation\",\n  \"visibility\": \"PUBLIC\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"admin public deck create returns HTTP 201\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(201);",
+              "  pm.collectionVariables.set(\"adminDeckId\", json.data.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Admin submits public deck review",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{adminDeckId}}/submit-review",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{adminDeckId}}",
+            "submit-review"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"admin deck review submission returns PENDING\", function () { pm.expect(pm.response.json().data.status).to.eql(\"PENDING\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 - Admin approves public deck",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/decks/{{adminDeckId}}/approve",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "decks",
+            "{{adminDeckId}}",
+            "approve"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"admin approve deck returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"admin approved deck is APPROVED\", function () { pm.expect(json.data.status).to.eql(\"APPROVED\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 - Target reports approved deck",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reports",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reports"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{targetAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"targetType\": \"DECK\",\n  \"targetId\": \"{{adminDeckId}}\",\n  \"reason\": \"Learner asks admin to verify this deck\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"target report create returns HTTP 201\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(201);",
+              "  pm.collectionVariables.set(\"reportId\", json.data.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 - Admin lists open reports",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/reports?status=OPEN&page=0&size=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "reports?status=OPEN&page=0&size=20"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"open report list includes target report\", function () {",
+              "  const items = pm.response.json().data.items;",
+              "  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get(\"reportId\"))).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 - Admin resolves report",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/admin/reports/{{reportId}}/status",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "reports",
+            "{{reportId}}",
+            "status"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"RESOLVED\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"resolve report returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"report status is RESOLVED\", function () { pm.expect(json.data.status).to.eql(\"RESOLVED\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 - Audit logs include deck approval",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/audit-logs?action=DECK_APPROVED&resourceType=DECK&resourceId={{adminDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "audit-logs?action=DECK_APPROVED&resourceType=DECK&resourceId={{adminDeckId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"deck approval audit log exists\", function () { pm.expect(pm.response.json().data.totalItems).to.be.at.least(1); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 - Audit logs include user lock",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/audit-logs?action=USER_LOCKED&resourceType=USER&resourceId={{targetUserId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "audit-logs?action=USER_LOCKED&resourceType=USER&resourceId={{targetUserId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"user lock audit log exists\", function () { pm.expect(pm.response.json().data.totalItems).to.be.at.least(1); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

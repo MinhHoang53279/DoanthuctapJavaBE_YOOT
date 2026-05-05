@@ -1,0 +1,920 @@
+{
+  "info": {
+    "_postman_id": "8f8c0002-4f7d-4e9e-9d1a-000200020002",
+    "name": "02 - Han learner private deck and learning",
+    "description": "Persona Han: a learner creates a private deck, adds flashcards, studies, reviews, checks progress, then cleans up. Count: 27 Postman pm.test test cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "password",
+      "value": "Password@123"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Prepare Han fresh persona run",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/content/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "content",
+            "health"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const runId = Date.now().toString();",
+              "pm.collectionVariables.set(\"runId\", runId);",
+              "pm.collectionVariables.set(\"hanEmail\", \"han.\" + runId + \"@example.com\");",
+              "pm.collectionVariables.set(\"hanUsername\", \"han_\" + runId);",
+              "pm.collectionVariables.set(\"hanFullName\", \"Han \" + runId);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"prepare returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"prepare confirms content module\", function () { pm.expect(json.data.module).to.eql(\"content\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 - Register Han learner",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{hanEmail}}\",\n  \"username\": \"{{hanUsername}}\",\n  \"password\": \"{{password}}\",\n  \"fullName\": \"{{hanFullName}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Han register returns HTTP 201\", function () { pm.response.to.have.status(201); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Login Han learner",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrEmail\": \"{{hanEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"Han login returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Han login stores access and refresh tokens\", function () {",
+              "  pm.collectionVariables.set(\"hanAccessToken\", json.data.accessToken);",
+              "  pm.collectionVariables.set(\"hanRefreshToken\", json.data.refreshToken);",
+              "  pm.expect(json.data.refreshToken).to.not.be.empty;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Load language catalog",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/languages",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "languages"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const items = pm.response.json().data;",
+              "pm.test(\"language catalog returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"language catalog has English and Vietnamese\", function () {",
+              "  pm.collectionVariables.set(\"englishId\", items.find(x => x.code === \"en\").id);",
+              "  pm.collectionVariables.set(\"vietnameseId\", items.find(x => x.code === \"vi\").id);",
+              "  pm.expect(items.map(x => x.code)).to.include.members([\"en\", \"vi\"]);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Load topic catalog",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/topics",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "topics"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const items = pm.response.json().data;",
+              "pm.test(\"topic catalog has Daily Life\", function () {",
+              "  pm.collectionVariables.set(\"dailyLifeTopicId\", items.find(x => x.name === \"Daily Life\").id);",
+              "  pm.expect(items.map(x => x.name)).to.include(\"Daily Life\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Create Han private deck",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Han Private Daily Vocabulary {{runId}}\",\n  \"description\": \"Private deck for daily study automation\",\n  \"sourceLanguageId\": \"{{vietnameseId}}\",\n  \"targetLanguageId\": \"{{englishId}}\",\n  \"topicId\": \"{{dailyLifeTopicId}}\",\n  \"visibility\": \"PRIVATE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"private deck create returns HTTP 201\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"private deck is DRAFT and PRIVATE\", function () {",
+              "  pm.collectionVariables.set(\"hanDeckId\", json.data.id);",
+              "  pm.expect(json.data.visibility).to.eql(\"PRIVATE\");",
+              "  pm.expect(json.data.status).to.eql(\"DRAFT\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Anonymous cannot open Han private deck",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{hanDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{hanDeckId}}"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"anonymous private deck detail returns HTTP 403\", function () { pm.response.to.have.status(403); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Han opens own private deck",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{hanDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{hanDeckId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"owner private deck detail returns HTTP 200\", function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Han updates deck title",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{hanDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{hanDeckId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Han Updated Private Vocabulary {{runId}}\",\n  \"description\": \"Updated by Han\",\n  \"sourceLanguageId\": \"{{vietnameseId}}\",\n  \"targetLanguageId\": \"{{englishId}}\",\n  \"topicId\": \"{{dailyLifeTopicId}}\",\n  \"visibility\": \"PRIVATE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"deck update returns HTTP 200\", function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Add apple flashcard",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{hanDeckId}}/flashcards",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{hanDeckId}}",
+            "flashcards"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"frontText\": \"apple\",\n  \"backText\": \"qua tao\",\n  \"pronunciation\": \"/ap-uhl/\",\n  \"exampleSentence\": \"I eat an apple every day.\",\n  \"note\": \"noun\",\n  \"difficultyLevel\": \"EASY\",\n  \"cardOrder\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"apple flashcard create returns HTTP 201\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"apple flashcard id is stored\", function () {",
+              "  pm.collectionVariables.set(\"hanFlashcardOneId\", json.data.id);",
+              "  pm.expect(json.data.frontText).to.eql(\"apple\");",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Add book flashcard",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{hanDeckId}}/flashcards",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{hanDeckId}}",
+            "flashcards"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"frontText\": \"book\",\n  \"backText\": \"quyen sach\",\n  \"difficultyLevel\": \"MEDIUM\",\n  \"cardOrder\": 2\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"book flashcard create returns HTTP 201\", function () {",
+              "  pm.response.to.have.status(201);",
+              "  pm.collectionVariables.set(\"hanFlashcardTwoId\", json.data.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - List Han flashcards",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{hanDeckId}}/flashcards?page=0&size=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{hanDeckId}}",
+            "flashcards?page=0&size=10"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"owner flashcard list returns at least two cards\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(json.data.totalItems).to.be.at.least(2);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - Start Han study session",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/study-sessions/start",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "study-sessions",
+            "start"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deckId\": \"{{hanDeckId}}\",\n  \"limit\": 20\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"study session starts with HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"study session returns cards\", function () {",
+              "  pm.collectionVariables.set(\"hanSessionId\", json.data.sessionId);",
+              "  pm.collectionVariables.set(\"hanStudyFlashcardId\", json.data.cards[0].flashcardId);",
+              "  pm.expect(json.data.cards.length).to.be.at.least(1);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Submit GOOD review",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reviews/{{hanStudyFlashcardId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reviews",
+            "{{hanStudyFlashcardId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"studySessionId\": \"{{hanSessionId}}\",\n  \"rating\": \"GOOD\",\n  \"responseTimeMs\": 1400\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"GOOD review returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"GOOD review moves card into learning\", function () { pm.expect(json.data.masteryLevel).to.eql(\"LEARNING\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 - Reviews today works after review",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/reviews/today?limit=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reviews",
+            "today?limit=20"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"reviews today returns HTTP 200\", function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 - Finish Han study session",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/study-sessions/{{hanSessionId}}/finish",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "study-sessions",
+            "{{hanSessionId}}",
+            "finish"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"finish study session returns HTTP 204\", function () { pm.response.to.have.status(204); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 - Han deck progress is updated",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/progress/decks/{{hanDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "progress",
+            "decks",
+            "{{hanDeckId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"deck progress returns learned card count\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(json.data.learnedCards).to.be.at.least(1);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 - Han overview includes streak",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/progress/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "progress",
+            "me"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"progress overview returns current streak\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(json.data.currentStreakDays).to.be.at.least(1);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 - Delete second flashcard",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/flashcards/{{hanFlashcardTwoId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "flashcards",
+            "{{hanFlashcardTwoId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"flashcard delete returns HTTP 204\", function () { pm.response.to.have.status(204); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 - Delete Han private deck",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{hanDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{hanDeckId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{hanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"deck delete returns HTTP 204\", function () { pm.response.to.have.status(204); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
