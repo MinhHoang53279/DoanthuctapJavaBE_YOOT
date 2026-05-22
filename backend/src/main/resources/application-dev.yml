@@ -1,3 +1,10 @@
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:dev-only-jwt-secret-please-change-in-production-32bytes}
+      access-token-expiration-ms: ${ACCESS_TOKEN_EXPIRATION_MS:3600000}
+      refresh-token-expiration-ms: ${REFRESH_TOKEN_EXPIRATION_MS:604800000}
+
 logging:
   level:
     com.yoot.flashcard: DEBUG

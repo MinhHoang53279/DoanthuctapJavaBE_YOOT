@@ -10,6 +10,7 @@ Thumbs.db
 # Logs
 *.log
 logs/
+*.pid
 
 # Env
 .env
@@ -20,12 +21,24 @@ logs/
 target/
 **/target/
 *.class
+.mvn/timing.properties
 
 # Spring Boot
 *.jar
 *.war
+*.ear
 
 # Node
 node_modules/
 dist/
 build/
+coverage/
+
+# Runtime / temp
+tmp/
+temp/
+*.tmp
+
+# Test reports
+surefire-reports/
+failsafe-reports/

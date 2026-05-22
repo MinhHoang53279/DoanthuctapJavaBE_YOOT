@@ -1043,6 +1043,8 @@ cd backend
 mvn spring-boot:run
 \`\`\`
 
+Profile mac dinh la \`dev\` voi JWT secret co san, khong can set bien moi truong them. Neu chay tren profile khac, nho set \`JWT_SECRET\`.
+
 Base URL mac dinh:
 
 \`\`\`text
