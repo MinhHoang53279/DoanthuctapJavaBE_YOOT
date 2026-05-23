@@ -79,7 +79,7 @@ function collection(idSeed, name, description, variables, items) {
 }
 
 function prepare(name, prefix, healthPath, moduleName) {
-  return req(name, "GET", healthPath, {
+  return req(name, "GET", "/auth/health", {
     pre: `
 const runId = Date.now().toString();
 pm.collectionVariables.set("runId", runId);
@@ -90,7 +90,7 @@ pm.collectionVariables.set("${prefix}FullName", "${prefix.charAt(0).toUpperCase(
     test: `
 const json = pm.response.json();
 pm.test("${name} returns HTTP 200", function () { pm.response.to.have.status(200); });
-pm.test("${name} confirms ${moduleName}", function () { pm.expect(json.data.module).to.eql("${moduleName}"); });
+pm.test("${name} confirms public auth health", function () { pm.expect(json.data.module).to.eql("auth"); });
 `,
   });
 }
@@ -114,22 +114,19 @@ pm.test("auth health is public", function () { pm.response.to.have.status(200); 
 pm.test("auth health returns auth module", function () { pm.expect(json.data.module).to.eql("auth"); });
 `,
     }),
-    req("06.01 - Vy checks content health", "GET", "/content/health", {
+    req("06.01 - Vy sees content health is protected", "GET", "/content/health", {
       test: `
-pm.test("content health is public", function () { pm.response.to.have.status(200); });
-pm.test("content health response succeeds", function () { pm.expect(pm.response.json().success).to.eql(true); });
+pm.test("content health without token returns HTTP 401", function () { pm.response.to.have.status(401); });
 `,
     }),
-    req("06.02 - Vy checks assessment placeholder health", "GET", "/quizzes/health", {
+    req("06.02 - Vy sees assessment health is protected", "GET", "/quizzes/health", {
       test: `
-pm.test("assessment health is public", function () { pm.response.to.have.status(200); });
-pm.test("assessment module name is returned", function () { pm.expect(pm.response.json().data.module).to.eql("assessment"); });
+pm.test("assessment health without token returns HTTP 401", function () { pm.response.to.have.status(401); });
 `,
     }),
-    req("06.03 - Vy checks classroom placeholder health", "GET", "/classes/health", {
+    req("06.03 - Vy sees classroom health is protected", "GET", "/classes/health", {
       test: `
-pm.test("classroom health is public", function () { pm.response.to.have.status(200); });
-pm.test("classroom module name is returned", function () { pm.expect(pm.response.json().data.module).to.eql("classroom"); });
+pm.test("classroom health without token returns HTTP 401", function () { pm.response.to.have.status(401); });
 `,
     }),
     req("06.04 - Vy reads seeded languages", "GET", "/languages", {

@@ -70,7 +70,7 @@
             "exec": [
               "const json = pm.response.json();",
               "pm.test(\"07.00 - Prepare Quan auth run returns HTTP 200\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"07.00 - Prepare Quan auth run confirms auth\", function () { pm.expect(json.data.module).to.eql(\"auth\"); });"
+              "pm.test(\"07.00 - Prepare Quan auth run confirms public auth health\", function () { pm.expect(json.data.module).to.eql(\"auth\"); });"
             ]
           }
         }

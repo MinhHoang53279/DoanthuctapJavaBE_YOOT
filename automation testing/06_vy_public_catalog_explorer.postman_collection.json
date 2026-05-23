@@ -64,7 +64,7 @@
       ]
     },
     {
-      "name": "06.01 - Vy checks content health",
+      "name": "06.01 - Vy sees content health is protected",
       "request": {
         "method": "GET",
         "header": [],
@@ -86,15 +86,14 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"content health is public\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"content health response succeeds\", function () { pm.expect(pm.response.json().success).to.eql(true); });"
+              "pm.test(\"content health without token returns HTTP 401\", function () { pm.response.to.have.status(401); });"
             ]
           }
         }
       ]
     },
     {
-      "name": "06.02 - Vy checks assessment placeholder health",
+      "name": "06.02 - Vy sees assessment health is protected",
       "request": {
         "method": "GET",
         "header": [],
@@ -116,15 +115,14 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"assessment health is public\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"assessment module name is returned\", function () { pm.expect(pm.response.json().data.module).to.eql(\"assessment\"); });"
+              "pm.test(\"assessment health without token returns HTTP 401\", function () { pm.response.to.have.status(401); });"
             ]
           }
         }
       ]
     },
     {
-      "name": "06.03 - Vy checks classroom placeholder health",
+      "name": "06.03 - Vy sees classroom health is protected",
       "request": {
         "method": "GET",
         "header": [],
@@ -146,8 +144,7 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"classroom health is public\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"classroom module name is returned\", function () { pm.expect(pm.response.json().data.module).to.eql(\"classroom\"); });"
+              "pm.test(\"classroom health without token returns HTTP 401\", function () { pm.response.to.have.status(401); });"
             ]
           }
         }

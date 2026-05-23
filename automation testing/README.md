@@ -12,12 +12,12 @@ Thu muc nay gom 10 Postman collection import-chay truc tiep cho backend Flashcar
 2. `02_han_learner_private_deck_learning.postman_collection.json`
    - Persona: Han, learner hoc hang ngay.
    - Scope: private deck, flashcards, study session, review, progress, cleanup.
-   - 28 `pm.test` test cases.
+   - 27 `pm.test` test cases.
 
 6. `06_vy_public_catalog_explorer.postman_collection.json`
    - Persona: Vy, visitor chua dang nhap.
    - Scope: health check, public catalog, search/filter/pagination, protected boundary.
-   - 26 `pm.test` test cases.
+   - 23 `pm.test` test cases.
 
 7. `07_quan_refresh_token_abuse_checks.postman_collection.json`
    - Persona: Quan, learner kiem tra refresh token.

@@ -99,7 +99,7 @@ function writeCollection(fileName, data) {
 }
 
 function preparePersona(personaPrefix, healthPath, moduleName) {
-  return request(`00 - Prepare ${capitalize(personaPrefix)} fresh persona run`, "GET", healthPath, {
+  return request(`00 - Prepare ${capitalize(personaPrefix)} fresh persona run`, "GET", "/auth/health", {
     pre: `
 const runId = Date.now().toString();
 pm.collectionVariables.set("runId", runId);
@@ -110,7 +110,7 @@ pm.collectionVariables.set("${personaPrefix}FullName", "${capitalize(personaPref
     test: `
 const json = pm.response.json();
 pm.test("prepare returns HTTP 200", function () { pm.response.to.have.status(200); });
-pm.test("prepare confirms ${moduleName} module", function () { pm.expect(json.data.module).to.eql("${moduleName}"); });
+pm.test("prepare confirms public auth health", function () { pm.expect(json.data.module).to.eql("auth"); });
 `,
   });
 }
@@ -1151,4 +1151,3 @@ writeCollection("03_linh_content_manager_curation.postman_collection.json", mana
 writeCollection("04_anh_admin_moderation_governance.postman_collection.json", adminModeration);
 writeCollection("05_khoa_security_boundary_regression.postman_collection.json", securityBoundary);
 fs.writeFileSync(path.join(outDir, "flashcard_local.postman_environment.json"), JSON.stringify(environment, null, 2) + "\n", "utf8");
-fs.writeFileSync(path.join(outDir, "README.md"), readme, "utf8");
