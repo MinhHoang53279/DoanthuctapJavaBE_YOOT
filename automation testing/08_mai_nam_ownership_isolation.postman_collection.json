@@ -678,7 +678,8 @@
             "exec": [
               "pm.test(\"Mai sees own private deck in authenticated list\", function () {",
               "  const items = pm.response.json().data.items;",
-              "  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get(\"maiDeckId\"))).to.eql(true);",
+              "  const maiDeckId = String(pm.collectionVariables.get(\"maiDeckId\"));",
+              "  pm.expect(items.some(x => String(x.id) === maiDeckId)).to.eql(true);",
               "});"
             ]
           }
@@ -719,7 +720,8 @@
             "exec": [
               "pm.test(\"Nam does not see Mai private deck in list\", function () {",
               "  const items = pm.response.json().data.items;",
-              "  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get(\"maiDeckId\"))).to.eql(false);",
+              "  const maiDeckId = String(pm.collectionVariables.get(\"maiDeckId\"));",
+              "  pm.expect(items.some(x => String(x.id) === maiDeckId)).to.eql(false);",
               "});"
             ]
           }

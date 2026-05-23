@@ -811,7 +811,7 @@
       ]
     },
     {
-      "name": "09.15 - Progress shows four learned cards",
+      "name": "09.15 - Progress shows learned non-AGAIN cards",
       "request": {
         "method": "GET",
         "header": [],
@@ -846,7 +846,7 @@
             "exec": [
               "const json = pm.response.json();",
               "pm.test(\"rating deck progress returns HTTP 200\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"rating deck learned cards is four\", function () { pm.expect(json.data.learnedCards).to.eql(4); });"
+              "pm.test(\"rating deck learned cards excludes AGAIN retry\", function () { pm.expect(json.data.learnedCards).to.eql(3); });"
             ]
           }
         }

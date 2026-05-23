@@ -421,7 +421,8 @@ pm.test("Mai cannot read Nam deck", function () { pm.response.to.have.status(403
       test: `
 pm.test("Mai sees own private deck in authenticated list", function () {
   const items = pm.response.json().data.items;
-  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get("maiDeckId"))).to.eql(true);
+  const maiDeckId = String(pm.collectionVariables.get("maiDeckId"));
+  pm.expect(items.some(x => String(x.id) === maiDeckId)).to.eql(true);
 });
 `,
     }),
@@ -430,7 +431,8 @@ pm.test("Mai sees own private deck in authenticated list", function () {
       test: `
 pm.test("Nam does not see Mai private deck in list", function () {
   const items = pm.response.json().data.items;
-  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get("maiDeckId"))).to.eql(false);
+  const maiDeckId = String(pm.collectionVariables.get("maiDeckId"));
+  pm.expect(items.some(x => String(x.id) === maiDeckId)).to.eql(false);
 });
 `,
     }),
@@ -560,12 +562,12 @@ pm.test("EASY first interval is four days", function () { pm.expect(json.data.in
       auth: "{{oanhAccessToken}}",
       test: `pm.test("second finish returns HTTP 409", function () { pm.response.to.have.status(409); });`,
     }),
-    req("09.15 - Progress shows four learned cards", "GET", "/progress/decks/{{oanhDeckId}}", {
+    req("09.15 - Progress shows learned non-AGAIN cards", "GET", "/progress/decks/{{oanhDeckId}}", {
       auth: "{{oanhAccessToken}}",
       test: `
 const json = pm.response.json();
 pm.test("rating deck progress returns HTTP 200", function () { pm.response.to.have.status(200); });
-pm.test("rating deck learned cards is four", function () { pm.expect(json.data.learnedCards).to.eql(4); });
+pm.test("rating deck learned cards excludes AGAIN retry", function () { pm.expect(json.data.learnedCards).to.eql(3); });
 `,
     }),
     req("09.16 - Overview shows streak after matrix", "GET", "/progress/me", {
