@@ -705,7 +705,8 @@ pm.test("target learner register returns HTTP 201", function () {
       test: `
 pm.test("user list contains target learner", function () {
   const items = pm.response.json().data.items;
-  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get("targetUserId"))).to.eql(true);
+  const targetUserId = String(pm.collectionVariables.get("targetUserId"));
+  pm.expect(items.some(x => String(x.id) === targetUserId)).to.eql(true);
 });
 `,
     }),
@@ -794,7 +795,8 @@ pm.test("target report create returns HTTP 201", function () {
       test: `
 pm.test("open report list includes target report", function () {
   const items = pm.response.json().data.items;
-  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get("reportId"))).to.eql(true);
+  const reportId = String(pm.collectionVariables.get("reportId"));
+  pm.expect(items.some(x => String(x.id) === reportId)).to.eql(true);
 });
 `,
     }),
