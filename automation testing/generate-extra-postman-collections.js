@@ -662,8 +662,9 @@ pm.test("filter learner register returns HTTP 201", function () {
       test: `
 pm.test("keyword filter includes learner", function () {
   const items = pm.response.json().data.items;
+  const learnerId = String(pm.collectionVariables.get("baoLearnerId"));
   pm.response.to.have.status(200);
-  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get("baoLearnerId"))).to.eql(true);
+  pm.expect(items.some(x => String(x.id) === learnerId)).to.eql(true);
 });
 `,
     }),
@@ -686,7 +687,8 @@ pm.test("admin lock changes status", function () { pm.expect(pm.response.json().
       test: `
 pm.test("locked filter contains target", function () {
   const items = pm.response.json().data.items;
-  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get("baoLearnerId"))).to.eql(true);
+  const learnerId = String(pm.collectionVariables.get("baoLearnerId"));
+  pm.expect(items.some(x => String(x.id) === learnerId)).to.eql(true);
 });
 `,
     }),
