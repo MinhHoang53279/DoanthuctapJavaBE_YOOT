@@ -465,7 +465,7 @@ const managerCuration = collection(
   "03 - Linh content manager curation",
   "Persona Linh: a content manager curates public content, approves one deck, rejects another, and verifies catalog visibility. Count: 27 Postman pm.test test cases. Requires managerEmail/managerPassword variables.",
   {
-    managerEmail: "manager@example.com",
+    managerEmail: "admin@example.com",
     managerPassword: "Password@123",
   },
   [
@@ -982,7 +982,7 @@ const environment = {
   name: "Flashcard Local MongoDB",
   values: [
     { key: "baseUrl", value: "http://localhost:8080/api/v1", type: "default", enabled: true },
-    { key: "managerEmail", value: "manager@example.com", type: "default", enabled: true },
+    { key: "managerEmail", value: "admin@example.com", type: "default", enabled: true },
     { key: "managerPassword", value: "Password@123", type: "secret", enabled: true },
     { key: "adminEmail", value: "admin@example.com", type: "default", enabled: true },
     { key: "adminPassword", value: "Password@123", type: "secret", enabled: true },

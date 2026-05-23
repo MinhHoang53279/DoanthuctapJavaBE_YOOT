@@ -24,7 +24,7 @@
     },
     {
       "key": "managerEmail",
-      "value": "manager@example.com"
+      "value": "admin@example.com"
     },
     {
       "key": "managerPassword",

@@ -70,7 +70,7 @@ function collection(idSeed, name, description, variables, items) {
       password: "Password@123",
       adminEmail: "admin@example.com",
       adminPassword: "Password@123",
-      managerEmail: "manager@example.com",
+      managerEmail: "admin@example.com",
       managerPassword: "Password@123",
       ...variables,
     }).map(([key, value]) => ({ key, value })),

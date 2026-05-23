@@ -131,7 +131,16 @@ db.users.updateOne(
 )
 ```
 
-3. Trong Postman, sua variables:
+3. Tai khoan admin local da tao co the dung truc tiep cho collection 03, 04 va 10:
+
+```text
+adminEmail: admin@example.com
+adminPassword: Password@123
+managerEmail: admin@example.com
+managerPassword: Password@123
+```
+
+4. Trong Postman, sua variables neu ban muon dung tai khoan khac:
 
 - `managerEmail`
 - `managerPassword`
@@ -167,7 +176,7 @@ Neu sua truc tiep trong Postman:
 - `baseUrl`: doi port/domain backend.
 - `runId`: auto set moi lan chay collection tu request dau.
 - `password`: password mac dinh cho learner auto-created.
-- `managerEmail`, `managerPassword`: credential content manager.
+- `managerEmail`, `managerPassword`: credential content manager; mac dinh dang dung admin local vi role `ADMIN` du quyen chay flow nay.
 - `adminEmail`, `adminPassword`: credential admin.
 
 ## Luu y
