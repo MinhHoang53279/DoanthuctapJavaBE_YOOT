@@ -504,7 +504,8 @@ pm.test("curation tag id is stored", function () { pm.collectionVariables.set("m
       test: `
 pm.test("tag catalog includes manager tag", function () {
   const items = pm.response.json().data;
-  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get("managerTagId"))).to.eql(true);
+  const tagId = String(pm.collectionVariables.get("managerTagId"));
+  pm.expect(items.some(x => String(x.id) === tagId)).to.eql(true);
 });
 `,
     }),
@@ -564,7 +565,8 @@ pm.test("approved deck status is APPROVED", function () { pm.expect(json.data.st
       test: `
 const items = pm.response.json().data.items;
 pm.test("approved public deck is visible anonymously", function () {
-  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get("managerApprovedDeckId"))).to.eql(true);
+  const deckId = String(pm.collectionVariables.get("managerApprovedDeckId"));
+  pm.expect(items.some(x => String(x.id) === deckId)).to.eql(true);
 });
 pm.test("public catalog request returns HTTP 200", function () { pm.response.to.have.status(200); });
 `,
@@ -599,7 +601,8 @@ pm.test("rejected deck status is REJECTED", function () { pm.expect(json.data.st
       test: `
 pm.test("rejected deck is hidden from anonymous catalog", function () {
   const items = pm.response.json().data.items;
-  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get("managerRejectedDeckId"))).to.eql(false);
+  const deckId = String(pm.collectionVariables.get("managerRejectedDeckId"));
+  pm.expect(items.some(x => String(x.id) === deckId)).to.eql(false);
 });
 `,
     }),
@@ -608,7 +611,8 @@ pm.test("rejected deck is hidden from anonymous catalog", function () {
       test: `
 pm.test("manager catalog sees rejected deck", function () {
   const items = pm.response.json().data.items;
-  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get("managerRejectedDeckId"))).to.eql(true);
+  const deckId = String(pm.collectionVariables.get("managerRejectedDeckId"));
+  pm.expect(items.some(x => String(x.id) === deckId)).to.eql(true);
 });
 `,
     }),
