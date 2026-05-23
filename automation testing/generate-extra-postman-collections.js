@@ -108,6 +108,9 @@ const publicExplorer = collection(
   {},
   [
     req("06.00 - Vy checks auth health", "GET", "/auth/health", {
+      pre: `
+pm.collectionVariables.set("runId", Date.now().toString());
+`,
       test: `
 const json = pm.response.json();
 pm.test("auth health is public", function () { pm.response.to.have.status(200); });
@@ -162,9 +165,11 @@ pm.test("public deck catalog respects requested size", function () { pm.expect(p
     }),
     req("06.08 - Vy searches deck catalog with no match", "GET", "/decks?keyword=unlikely-public-keyword-{{runId}}&page=0&size=5", {
       test: `
-const page = pm.response.json().data;
 pm.test("empty deck search returns HTTP 200", function () { pm.response.to.have.status(200); });
-pm.test("empty deck search returns zero items", function () { pm.expect(page.items.length).to.eql(0); });
+pm.test("empty deck search returns zero items", function () {
+  const page = pm.response.json().data;
+  pm.expect(page.items.length).to.eql(0);
+});
 `,
     }),
     req("06.09 - Vy cannot create anonymous deck", "POST", "/decks", {

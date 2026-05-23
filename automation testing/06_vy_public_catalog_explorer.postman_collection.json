@@ -51,6 +51,15 @@
       "response": [],
       "event": [
         {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"runId\", Date.now().toString());"
+            ]
+          }
+        },
+        {
           "listen": "test",
           "script": {
             "type": "text/javascript",
@@ -295,9 +304,11 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "const page = pm.response.json().data;",
               "pm.test(\"empty deck search returns HTTP 200\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"empty deck search returns zero items\", function () { pm.expect(page.items.length).to.eql(0); });"
+              "pm.test(\"empty deck search returns zero items\", function () {",
+              "  const page = pm.response.json().data;",
+              "  pm.expect(page.items.length).to.eql(0);",
+              "});"
             ]
           }
         }
