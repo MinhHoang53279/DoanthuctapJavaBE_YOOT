@@ -1,0 +1,629 @@
+{
+  "info": {
+    "_postman_id": "9a9d0007-6f81-4a2b-9c41-000700070007",
+    "name": "07 - Quan refresh token abuse checks",
+    "description": "Persona Quan: learner focuses on refresh token invalid inputs, rotation, reuse detection, logout, and token-bound private endpoints. Count: 25 pm.test test cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "password",
+      "value": "Password@123"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@example.com"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Password@123"
+    },
+    {
+      "key": "managerEmail",
+      "value": "manager@example.com"
+    },
+    {
+      "key": "managerPassword",
+      "value": "Password@123"
+    }
+  ],
+  "item": [
+    {
+      "name": "07.00 - Prepare Quan auth run",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "health"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const runId = Date.now().toString();",
+              "pm.collectionVariables.set(\"runId\", runId);",
+              "pm.collectionVariables.set(\"quanEmail\", \"quan.\" + runId + \"@example.com\");",
+              "pm.collectionVariables.set(\"quanUsername\", \"quan_\" + runId);",
+              "pm.collectionVariables.set(\"quanFullName\", \"Quan \" + runId);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"07.00 - Prepare Quan auth run returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"07.00 - Prepare Quan auth run confirms auth\", function () { pm.expect(json.data.module).to.eql(\"auth\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07.01 - Quan registers",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{quanEmail}}\",\n  \"username\": \"{{quanUsername}}\",\n  \"password\": \"{{password}}\",\n  \"fullName\": \"{{quanFullName}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Quan register returns HTTP 201\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"Quan register response succeeds\", function () { pm.expect(pm.response.json().success).to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07.02 - Quan login stores token pair",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrEmail\": \"{{quanUsername}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"Quan login returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"Quan login stores access token\", function () { pm.collectionVariables.set(\"quanAccessToken\", json.data.accessToken); pm.expect(json.data.accessToken).to.not.be.empty; });",
+              "pm.test(\"Quan login stores refresh token\", function () { pm.collectionVariables.set(\"quanRefreshToken\", json.data.refreshToken); pm.expect(json.data.refreshToken).to.not.be.empty; });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07.03 - Blank refresh token is validation error",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "refresh"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"blank refresh returns HTTP 400\", function () { pm.response.to.have.status(400); });",
+              "pm.test(\"blank refresh has validation payload\", function () { pm.expect(pm.response.json().data).to.be.an(\"object\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07.04 - Random refresh token is unauthorized",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "refresh"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"totally-random-refresh-token\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"random refresh returns HTTP 401\", function () { pm.response.to.have.status(401); });",
+              "pm.test(\"random refresh response fails\", function () { pm.expect(pm.response.json().success).to.eql(false); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07.05 - Refresh rotates Quan tokens first time",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "refresh"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{quanRefreshToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"first refresh returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"first refresh rotates refresh token\", function () {",
+              "  pm.collectionVariables.set(\"quanRefreshTokenOne\", pm.collectionVariables.get(\"quanRefreshToken\"));",
+              "  pm.collectionVariables.set(\"quanAccessToken\", json.data.accessToken);",
+              "  pm.collectionVariables.set(\"quanRefreshToken\", json.data.refreshToken);",
+              "  pm.expect(json.data.refreshToken).to.not.eql(pm.collectionVariables.get(\"quanRefreshTokenOne\"));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07.06 - Reusing first refresh token fails",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "refresh"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{quanRefreshTokenOne}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"first refresh reuse returns HTTP 401\", function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07.07 - Current user works after refresh",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{quanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"me after refresh returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"me after refresh is Quan\", function () { pm.expect(json.data.email).to.eql(pm.collectionVariables.get(\"quanEmail\")); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07.08 - Refresh rotates Quan tokens second time",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "refresh"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{quanRefreshToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"second refresh returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"second refresh stores new token pair\", function () {",
+              "  pm.collectionVariables.set(\"quanRefreshTokenTwo\", pm.collectionVariables.get(\"quanRefreshToken\"));",
+              "  pm.collectionVariables.set(\"quanAccessToken\", json.data.accessToken);",
+              "  pm.collectionVariables.set(\"quanRefreshToken\", json.data.refreshToken);",
+              "  pm.expect(json.data.accessToken).to.not.be.empty;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07.09 - Reusing second refresh token fails",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "refresh"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{quanRefreshTokenTwo}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"second refresh reuse returns HTTP 401\", function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07.10 - Logout requires current refresh token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/logout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "logout"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{quanAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{quanRefreshToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"logout current token returns HTTP 204\", function () { pm.response.to.have.status(204); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07.11 - Refresh after logout fails",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/refresh",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "refresh"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{quanRefreshToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"refresh after logout returns HTTP 401\", function () { pm.response.to.have.status(401); });",
+              "pm.test(\"refresh after logout response fails\", function () { pm.expect(pm.response.json().success).to.eql(false); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07.12 - Login by email still works after logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrEmail\": \"{{quanEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"email login after logout returns HTTP 200\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(200);",
+              "  pm.collectionVariables.set(\"quanAccessToken\", json.data.accessToken);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

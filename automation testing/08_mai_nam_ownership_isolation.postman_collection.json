@@ -1,0 +1,878 @@
+{
+  "info": {
+    "_postman_id": "9a9d0008-6f81-4a2b-9c41-000800080008",
+    "name": "08 - Mai and Nam ownership isolation",
+    "description": "Personas Mai and Nam: two learners verify private deck isolation, owner-only flashcard management, and public catalog boundaries. Count: 27 pm.test test cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "password",
+      "value": "Password@123"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@example.com"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Password@123"
+    },
+    {
+      "key": "managerEmail",
+      "value": "manager@example.com"
+    },
+    {
+      "key": "managerPassword",
+      "value": "Password@123"
+    }
+  ],
+  "item": [
+    {
+      "name": "08.00 - Prepare Mai and Nam run",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/content/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "content",
+            "health"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const runId = Date.now().toString();",
+              "pm.collectionVariables.set(\"runId\", runId);",
+              "pm.collectionVariables.set(\"maiEmail\", \"mai.\" + runId + \"@example.com\");",
+              "pm.collectionVariables.set(\"maiUsername\", \"mai_\" + runId);",
+              "pm.collectionVariables.set(\"maiFullName\", \"Mai \" + runId);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"08.00 - Prepare Mai and Nam run returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"08.00 - Prepare Mai and Nam run confirms content\", function () { pm.expect(json.data.module).to.eql(\"content\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.01 - Register Mai owner",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{maiEmail}}\",\n  \"username\": \"{{maiUsername}}\",\n  \"password\": \"{{password}}\",\n  \"fullName\": \"{{maiFullName}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Mai register returns HTTP 201\", function () { pm.response.to.have.status(201); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.02 - Register Nam outsider",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{namEmail}}\",\n  \"username\": \"{{namUsername}}\",\n  \"password\": \"{{password}}\",\n  \"fullName\": \"Nam Outsider {{runId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set(\"namEmail\", \"nam.\" + pm.collectionVariables.get(\"runId\") + \"@example.com\");",
+              "pm.collectionVariables.set(\"namUsername\", \"nam_\" + pm.collectionVariables.get(\"runId\"));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Nam register returns HTTP 201\", function () { pm.response.to.have.status(201); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.03 - Login Mai",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrEmail\": \"{{maiEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Mai login stores token\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(200);",
+              "  pm.collectionVariables.set(\"maiAccessToken\", json.data.accessToken);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.04 - Login Nam",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrEmail\": \"{{namEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Nam login stores token\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(200);",
+              "  pm.collectionVariables.set(\"namAccessToken\", json.data.accessToken);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.05 - Mai creates private deck",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{maiAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Mai Private Isolation Deck {{runId}}\",\n  \"description\": \"Owner-only deck\",\n  \"visibility\": \"PRIVATE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"Mai private deck create returns HTTP 201\", function () { pm.response.to.have.status(201); });",
+              "pm.test(\"Mai deck id is stored\", function () { pm.collectionVariables.set(\"maiDeckId\", json.data.id); pm.expect(json.data.visibility).to.eql(\"PRIVATE\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.06 - Mai adds private flashcard",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{maiDeckId}}/flashcards",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{maiDeckId}}",
+            "flashcards"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{maiAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"frontText\": \"owner-only\",\n  \"backText\": \"chi chu so huu\",\n  \"difficultyLevel\": \"EASY\",\n  \"cardOrder\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Mai flashcard create returns HTTP 201\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(201);",
+              "  pm.collectionVariables.set(\"maiFlashcardId\", json.data.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.07 - Nam cannot open Mai private deck",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{maiDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{maiDeckId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{namAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Nam private deck detail returns HTTP 403\", function () { pm.response.to.have.status(403); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.08 - Nam cannot list Mai private flashcards",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{maiDeckId}}/flashcards",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{maiDeckId}}",
+            "flashcards"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{namAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Nam private flashcard list returns HTTP 403\", function () { pm.response.to.have.status(403); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.09 - Nam cannot update Mai flashcard",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/flashcards/{{maiFlashcardId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "flashcards",
+            "{{maiFlashcardId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{namAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"frontText\": \"stolen edit\",\n  \"backText\": \"should not work\",\n  \"difficultyLevel\": \"HARD\",\n  \"cardOrder\": 9\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Nam flashcard update returns HTTP 403\", function () { pm.response.to.have.status(403); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.10 - Nam cannot delete Mai flashcard",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/flashcards/{{maiFlashcardId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "flashcards",
+            "{{maiFlashcardId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{namAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Nam flashcard delete returns HTTP 403\", function () { pm.response.to.have.status(403); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.11 - Nam creates own private deck",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{namAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Nam Own Private Deck {{runId}}\",\n  \"visibility\": \"PRIVATE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Nam own deck create returns HTTP 201\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(201);",
+              "  pm.collectionVariables.set(\"namDeckId\", json.data.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.12 - Mai cannot open Nam private deck",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{namDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{namDeckId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{maiAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Mai cannot read Nam deck\", function () { pm.response.to.have.status(403); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.13 - Mai deck catalog shows own deck",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks?keyword=Mai%20Private%20Isolation&page=0&size=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks?keyword=Mai%20Private%20Isolation&page=0&size=10"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{maiAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Mai sees own private deck in authenticated list\", function () {",
+              "  const items = pm.response.json().data.items;",
+              "  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get(\"maiDeckId\"))).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.14 - Nam deck catalog does not show Mai deck",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks?keyword=Mai%20Private%20Isolation&page=0&size=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks?keyword=Mai%20Private%20Isolation&page=0&size=10"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{namAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Nam does not see Mai private deck in list\", function () {",
+              "  const items = pm.response.json().data.items;",
+              "  pm.expect(items.some(x => String(x.id) === pm.collectionVariables.get(\"maiDeckId\"))).to.eql(false);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.15 - Anonymous catalog does not show Mai private deck",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks?keyword=Mai%20Private%20Isolation&page=0&size=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks?keyword=Mai%20Private%20Isolation&page=0&size=10"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"anonymous does not see Mai private deck\", function () {",
+              "  const items = pm.response.json().data.items;",
+              "  pm.expect(items.length).to.eql(0);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.16 - Mai deletes private deck",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{maiDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{maiDeckId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{maiAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Mai delete own deck returns HTTP 204\", function () { pm.response.to.have.status(204); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.17 - Deleted Mai deck is gone",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{maiDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{maiDeckId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{maiAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"deleted Mai deck returns HTTP 404\", function () { pm.response.to.have.status(404); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08.18 - Nam deletes own deck",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{namDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{namDeckId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{namAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Nam delete own deck returns HTTP 204\", function () { pm.response.to.have.status(204); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

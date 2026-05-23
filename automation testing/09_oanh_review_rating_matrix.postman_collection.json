@@ -1,0 +1,899 @@
+{
+  "info": {
+    "_postman_id": "9a9d0009-6f81-4a2b-9c41-000900090009",
+    "name": "09 - Oanh review rating matrix",
+    "description": "Persona Oanh: learner reviews four cards with AGAIN, HARD, GOOD, EASY and verifies scheduling/progress differences. Count: 26 pm.test test cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "password",
+      "value": "Password@123"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@example.com"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Password@123"
+    },
+    {
+      "key": "managerEmail",
+      "value": "manager@example.com"
+    },
+    {
+      "key": "managerPassword",
+      "value": "Password@123"
+    }
+  ],
+  "item": [
+    {
+      "name": "09.00 - Prepare Oanh learning run",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/learning/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "learning",
+            "health"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const runId = Date.now().toString();",
+              "pm.collectionVariables.set(\"runId\", runId);",
+              "pm.collectionVariables.set(\"oanhEmail\", \"oanh.\" + runId + \"@example.com\");",
+              "pm.collectionVariables.set(\"oanhUsername\", \"oanh_\" + runId);",
+              "pm.collectionVariables.set(\"oanhFullName\", \"Oanh \" + runId);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"09.00 - Prepare Oanh learning run returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"09.00 - Prepare Oanh learning run confirms learning\", function () { pm.expect(json.data.module).to.eql(\"learning\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.01 - Register Oanh",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "register"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{oanhEmail}}\",\n  \"username\": \"{{oanhUsername}}\",\n  \"password\": \"{{password}}\",\n  \"fullName\": \"{{oanhFullName}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Oanh register returns HTTP 201\", function () { pm.response.to.have.status(201); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.02 - Login Oanh",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usernameOrEmail\": \"{{oanhEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Oanh login stores token\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(200);",
+              "  pm.collectionVariables.set(\"oanhAccessToken\", json.data.accessToken);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.03 - Create Oanh rating deck",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Oanh Rating Matrix {{runId}}\",\n  \"description\": \"Deck for rating matrix\",\n  \"visibility\": \"PRIVATE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"rating deck create returns HTTP 201\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(201);",
+              "  pm.collectionVariables.set(\"oanhDeckId\", json.data.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.04 - Create AGAIN card",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{oanhDeckId}}/flashcards",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{oanhDeckId}}",
+            "flashcards"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"frontText\": \"again card {{runId}}\",\n  \"backText\": \"again answer\",\n  \"difficultyLevel\": \"MEDIUM\",\n  \"cardOrder\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"again card create returns HTTP 201\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(201);",
+              "  pm.collectionVariables.set(\"againCardId\", json.data.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.05 - Create HARD card",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{oanhDeckId}}/flashcards",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{oanhDeckId}}",
+            "flashcards"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"frontText\": \"hard card {{runId}}\",\n  \"backText\": \"hard answer\",\n  \"difficultyLevel\": \"MEDIUM\",\n  \"cardOrder\": 2\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"hard card create returns HTTP 201\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(201);",
+              "  pm.collectionVariables.set(\"hardCardId\", json.data.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.06 - Create GOOD card",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{oanhDeckId}}/flashcards",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{oanhDeckId}}",
+            "flashcards"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"frontText\": \"good card {{runId}}\",\n  \"backText\": \"good answer\",\n  \"difficultyLevel\": \"MEDIUM\",\n  \"cardOrder\": 3\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"good card create returns HTTP 201\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(201);",
+              "  pm.collectionVariables.set(\"goodCardId\", json.data.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.07 - Create EASY card",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks/{{oanhDeckId}}/flashcards",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "{{oanhDeckId}}",
+            "flashcards"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"frontText\": \"easy card {{runId}}\",\n  \"backText\": \"easy answer\",\n  \"difficultyLevel\": \"MEDIUM\",\n  \"cardOrder\": 4\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"easy card create returns HTTP 201\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(201);",
+              "  pm.collectionVariables.set(\"easyCardId\", json.data.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.08 - Start rating matrix session",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/study-sessions/start",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "study-sessions",
+            "start"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"deckId\": \"{{oanhDeckId}}\",\n  \"limit\": 10\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"rating matrix session returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"rating matrix session has four cards\", function () { pm.collectionVariables.set(\"oanhSessionId\", json.data.sessionId); pm.expect(json.data.cards.length).to.eql(4); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.09 - Submit AGAIN review",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reviews/{{againCardId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reviews",
+            "{{againCardId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"studySessionId\": \"{{oanhSessionId}}\",\n  \"rating\": \"AGAIN\",\n  \"responseTimeMs\": 5000\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"AGAIN review returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"AGAIN interval is zero\", function () { pm.expect(json.data.intervalDays).to.eql(0); });",
+              "pm.test(\"AGAIN remains learning\", function () { pm.expect(json.data.masteryLevel).to.eql(\"LEARNING\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.10 - Submit HARD review",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reviews/{{hardCardId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reviews",
+            "{{hardCardId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"studySessionId\": \"{{oanhSessionId}}\",\n  \"rating\": \"HARD\",\n  \"responseTimeMs\": 4200\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"HARD review returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"HARD interval is at least one\", function () { pm.expect(json.data.intervalDays).to.be.at.least(1); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.11 - Submit GOOD review",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reviews/{{goodCardId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reviews",
+            "{{goodCardId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"studySessionId\": \"{{oanhSessionId}}\",\n  \"rating\": \"GOOD\",\n  \"responseTimeMs\": 2200\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"GOOD review returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"GOOD first interval is one day\", function () { pm.expect(json.data.intervalDays).to.eql(1); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.12 - Submit EASY review",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/reviews/{{easyCardId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "reviews",
+            "{{easyCardId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"studySessionId\": \"{{oanhSessionId}}\",\n  \"rating\": \"EASY\",\n  \"responseTimeMs\": 900\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"EASY review returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"EASY first interval is four days\", function () { pm.expect(json.data.intervalDays).to.eql(4); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.13 - Finish rating matrix session",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/study-sessions/{{oanhSessionId}}/finish",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "study-sessions",
+            "{{oanhSessionId}}",
+            "finish"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"finish rating session returns HTTP 204\", function () { pm.response.to.have.status(204); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.14 - Finishing same session again conflicts",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/study-sessions/{{oanhSessionId}}/finish",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "study-sessions",
+            "{{oanhSessionId}}",
+            "finish"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"second finish returns HTTP 409\", function () { pm.response.to.have.status(409); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.15 - Progress shows four learned cards",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/progress/decks/{{oanhDeckId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "progress",
+            "decks",
+            "{{oanhDeckId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"rating deck progress returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"rating deck learned cards is four\", function () { pm.expect(json.data.learnedCards).to.eql(4); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09.16 - Overview shows streak after matrix",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/progress/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "progress",
+            "me"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{oanhAccessToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"overview returns current streak\", function () {",
+              "  const json = pm.response.json();",
+              "  pm.response.to.have.status(200);",
+              "  pm.expect(json.data.currentStreakDays).to.be.at.least(1);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,467 @@
+{
+  "info": {
+    "_postman_id": "9a9d0006-6f81-4a2b-9c41-000600060006",
+    "name": "06 - Vy public catalog explorer",
+    "description": "Persona Vy: anonymous visitor explores public catalog, health endpoints, pagination, and protected boundaries without logging in. Count: 25 pm.test test cases.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "password",
+      "value": "Password@123"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@example.com"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Password@123"
+    },
+    {
+      "key": "managerEmail",
+      "value": "manager@example.com"
+    },
+    {
+      "key": "managerPassword",
+      "value": "Password@123"
+    }
+  ],
+  "item": [
+    {
+      "name": "06.00 - Vy checks auth health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "health"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"auth health is public\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"auth health returns auth module\", function () { pm.expect(json.data.module).to.eql(\"auth\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06.01 - Vy checks content health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/content/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "content",
+            "health"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"content health is public\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"content health response succeeds\", function () { pm.expect(pm.response.json().success).to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06.02 - Vy checks assessment placeholder health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/quizzes/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "quizzes",
+            "health"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"assessment health is public\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"assessment module name is returned\", function () { pm.expect(pm.response.json().data.module).to.eql(\"assessment\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06.03 - Vy checks classroom placeholder health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/classes/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "classes",
+            "health"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"classroom health is public\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"classroom module name is returned\", function () { pm.expect(pm.response.json().data.module).to.eql(\"classroom\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06.04 - Vy reads seeded languages",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/languages",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "languages"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const items = pm.response.json().data;",
+              "pm.test(\"languages return HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"languages contain required seed codes\", function () { pm.expect(items.map(x => x.code)).to.include.members([\"en\", \"vi\", \"ja\"]); });",
+              "pm.test(\"language ids are numeric\", function () { pm.expect(items[0].id).to.be.a(\"number\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06.05 - Vy reads seeded topics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/topics",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "topics"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const items = pm.response.json().data;",
+              "pm.test(\"topics return HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"topics contain Daily Life\", function () { pm.expect(items.map(x => x.name)).to.include(\"Daily Life\"); });",
+              "pm.test(\"topics are active\", function () { pm.expect(items.every(x => x.active === true)).to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06.06 - Vy reads tag catalog",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/tags",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "tags"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test(\"tags endpoint returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"tags endpoint returns an array\", function () { pm.expect(json.data).to.be.an(\"array\"); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06.07 - Vy browses public deck catalog first page",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks?page=0&size=5",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks?page=0&size=5"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const page = pm.response.json().data;",
+              "pm.test(\"public deck catalog returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"public deck catalog has page metadata\", function () { pm.expect(page).to.include.keys([\"items\", \"page\", \"size\", \"totalItems\", \"totalPages\"]); });",
+              "pm.test(\"public deck catalog respects requested size\", function () { pm.expect(page.size).to.eql(5); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06.08 - Vy searches deck catalog with no match",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks?keyword=unlikely-public-keyword-{{runId}}&page=0&size=5",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks?keyword=unlikely-public-keyword-{{runId}}&page=0&size=5"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const page = pm.response.json().data;",
+              "pm.test(\"empty deck search returns HTTP 200\", function () { pm.response.to.have.status(200); });",
+              "pm.test(\"empty deck search returns zero items\", function () { pm.expect(page.items.length).to.eql(0); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06.09 - Vy cannot create anonymous deck",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/decks",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Anonymous Deck Should Fail\",\n  \"visibility\": \"PRIVATE\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"anonymous deck create returns HTTP 401\", function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06.10 - Vy cannot open current user",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "me"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"anonymous current user returns HTTP 401\", function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06.11 - Vy cannot read admin dashboard",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/admin/dashboard",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "admin",
+            "dashboard"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"anonymous admin dashboard returns HTTP 401\", function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06.12 - Vy sees unknown deck as not found or protected",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/decks/999999999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "decks",
+            "999999999"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"unknown public deck lookup does not succeed\", function () { pm.expect([403, 404]).to.include(pm.response.code); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06.13 - Vy cannot list users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/users?page=0&size=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users?page=0&size=10"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"anonymous user list returns HTTP 401\", function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
