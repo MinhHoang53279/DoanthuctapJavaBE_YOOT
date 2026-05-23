@@ -56,7 +56,9 @@
             "type": "text/javascript",
             "exec": [
               "const runId = Date.now().toString();",
+              "const shortId = runId.slice(-8);",
               "pm.collectionVariables.set(\"runId\", runId);",
+              "pm.collectionVariables.set(\"baoShortId\", shortId);",
               "pm.collectionVariables.set(\"baoLearnerEmail\", \"bao.target.\" + runId + \"@example.com\");",
               "pm.collectionVariables.set(\"baoLearnerUsername\", \"bao_target_\" + runId);"
             ]
@@ -150,7 +152,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"code\": \"x{{runId}}\",\n  \"name\": \"Bao Language {{runId}}\"\n}",
+          "raw": "{\n  \"code\": \"b{{baoShortId}}\",\n  \"name\": \"Bao Language {{runId}}\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -206,7 +208,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"code\": \"x{{runId}}\",\n  \"name\": \"Bao Language Duplicate {{runId}}\"\n}",
+          "raw": "{\n  \"code\": \"b{{baoShortId}}\",\n  \"name\": \"Bao Language Duplicate {{runId}}\"\n}",
           "options": {
             "raw": {
               "language": "json"

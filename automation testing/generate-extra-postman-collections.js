@@ -588,7 +588,9 @@ const adminAuditFilters = collection(
     req("10.00 - Prepare Bao admin run", "GET", "/auth/health", {
       pre: `
 const runId = Date.now().toString();
+const shortId = runId.slice(-8);
 pm.collectionVariables.set("runId", runId);
+pm.collectionVariables.set("baoShortId", shortId);
 pm.collectionVariables.set("baoLearnerEmail", "bao.target." + runId + "@example.com");
 pm.collectionVariables.set("baoLearnerUsername", "bao_target_" + runId);
 `,
@@ -607,7 +609,7 @@ pm.test("Bao admin token stored", function () { pm.collectionVariables.set("baoA
     }),
     req("10.02 - Bao creates managed language", "POST", "/languages", {
       auth: "{{baoAdminToken}}",
-      body: { code: "x{{runId}}", name: "Bao Language {{runId}}" },
+      body: { code: "b{{baoShortId}}", name: "Bao Language {{runId}}" },
       test: `
 pm.test("admin language create returns HTTP 201", function () {
   const json = pm.response.json();
@@ -618,7 +620,7 @@ pm.test("admin language create returns HTTP 201", function () {
     }),
     req("10.03 - Duplicate language code conflicts", "POST", "/languages", {
       auth: "{{baoAdminToken}}",
-      body: { code: "x{{runId}}", name: "Bao Language Duplicate {{runId}}" },
+      body: { code: "b{{baoShortId}}", name: "Bao Language Duplicate {{runId}}" },
       test: `
 pm.test("duplicate language returns HTTP 409", function () { pm.response.to.have.status(409); });
 `,
