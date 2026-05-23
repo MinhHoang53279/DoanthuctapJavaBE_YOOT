@@ -41,6 +41,7 @@
             "exec": [
               "const runId = Date.now().toString();",
               "pm.collectionVariables.set(\"runId\", runId);",
+              "pm.collectionVariables.set(\"runIdShort\", runId.slice(-8));",
               "pm.collectionVariables.set(\"hanEmail\", \"han.\" + runId + \"@example.com\");",
               "pm.collectionVariables.set(\"hanUsername\", \"han_\" + runId);",
               "pm.collectionVariables.set(\"hanFullName\", \"Han \" + runId);"

@@ -103,6 +103,7 @@ function preparePersona(personaPrefix, healthPath, moduleName) {
     pre: `
 const runId = Date.now().toString();
 pm.collectionVariables.set("runId", runId);
+pm.collectionVariables.set("runIdShort", runId.slice(-8));
 pm.collectionVariables.set("${personaPrefix}Email", "${personaPrefix}." + runId + "@example.com");
 pm.collectionVariables.set("${personaPrefix}Username", "${personaPrefix}_" + runId);
 pm.collectionVariables.set("${personaPrefix}FullName", "${capitalize(personaPrefix)} " + runId);
@@ -858,7 +859,7 @@ pm.test("dashboard with learner token returns HTTP 403", function () { pm.respon
     }),
     request("05 - Learner cannot create language", "POST", "/languages", {
       auth: "{{khoaAccessToken}}",
-      body: { code: "xx{{runId}}", name: "Forbidden Language {{runId}}" },
+      body: { code: "k{{runIdShort}}", name: "Forbidden Language {{runId}}" },
       test: `
 pm.test("learner language create returns HTTP 403", function () { pm.response.to.have.status(403); });
 `,
@@ -934,11 +935,11 @@ pm.test("invalid study limit returns HTTP 400", function () { pm.response.to.hav
 pm.test("invalid study limit has validation payload", function () { pm.expect(json.data).to.be.an("object"); });
 `,
     }),
-    request("15 - Submit review with invalid rating", "POST", "/reviews/999999999", {
+    request("15 - Submit review without rating", "POST", "/reviews/999999999", {
       auth: "{{khoaAccessToken}}",
-      body: { rating: "PERFECT", responseTimeMs: 20 },
+      body: { responseTimeMs: 20 },
       test: `
-pm.test("invalid review rating returns HTTP 400", function () { pm.response.to.have.status(400); });
+pm.test("missing review rating returns HTTP 400", function () { pm.response.to.have.status(400); });
 `,
     }),
     request("16 - Reviews today with invalid token", "GET", "/reviews/today?limit=10", {

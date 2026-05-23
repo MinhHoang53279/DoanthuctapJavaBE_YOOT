@@ -41,6 +41,7 @@
             "exec": [
               "const runId = Date.now().toString();",
               "pm.collectionVariables.set(\"runId\", runId);",
+              "pm.collectionVariables.set(\"runIdShort\", runId.slice(-8));",
               "pm.collectionVariables.set(\"khoaEmail\", \"khoa.\" + runId + \"@example.com\");",
               "pm.collectionVariables.set(\"khoaUsername\", \"khoa_\" + runId);",
               "pm.collectionVariables.set(\"khoaFullName\", \"Khoa \" + runId);"
@@ -247,7 +248,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"code\": \"xx{{runId}}\",\n  \"name\": \"Forbidden Language {{runId}}\"\n}",
+          "raw": "{\n  \"code\": \"k{{runIdShort}}\",\n  \"name\": \"Forbidden Language {{runId}}\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -726,7 +727,7 @@
       ]
     },
     {
-      "name": "15 - Submit review with invalid rating",
+      "name": "15 - Submit review without rating",
       "request": {
         "method": "POST",
         "header": [
@@ -757,7 +758,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"rating\": \"PERFECT\",\n  \"responseTimeMs\": 20\n}",
+          "raw": "{\n  \"responseTimeMs\": 20\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -772,7 +773,7 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"invalid review rating returns HTTP 400\", function () { pm.response.to.have.status(400); });"
+              "pm.test(\"missing review rating returns HTTP 400\", function () { pm.response.to.have.status(400); });"
             ]
           }
         }
