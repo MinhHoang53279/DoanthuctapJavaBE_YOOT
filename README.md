@@ -28,7 +28,7 @@ Backend API cho nen tang hoc flashcard, duoc xay theo huong Spring Boot modular 
 ```text
 .
 ├── backend/                 # Spring Boot backend
-├── automation testing/      # Postman automation collections
+├── bo test api/             # Postman automation collections
 ├── docs/                    # Tai lieu PRD, architecture, database design, API contract
 ├── docker-compose.yml       # MongoDB local
 ├── .env.example             # Bien moi truong mau
@@ -40,6 +40,8 @@ Backend API cho nen tang hoc flashcard, duoc xay theo huong Spring Boot modular 
 - JDK 21+
 - Maven 3.9+
 - Docker Desktop hoac MongoDB local tai `localhost:27017`
+- Git
+- Postman neu muon chay automation collection
 
 Kiem tra nhanh:
 
@@ -47,9 +49,69 @@ Kiem tra nhanh:
 java -version
 mvn -version
 docker --version
+git --version
 ```
 
-## Chay MongoDB Local
+## Cai Dat Nhanh
+
+### 1. Clone source
+
+```bash
+git clone https://github.com/MinhHoang53279/DoanthuctapJavaBE_YOOT.git
+cd DoanthuctapJavaBE_YOOT
+```
+
+Neu dang co source san tren may thi mo terminal tai thu muc root cua project:
+
+```text
+E:\DoAnThucTapJavaBE_YOOT
+```
+
+### 2. Kiem tra cau truc project
+
+```bash
+dir
+```
+
+Can thay cac thu muc/file chinh:
+
+```text
+backend/
+docs/
+bo test api/
+docker-compose.yml
+.env.example
+README.md
+```
+
+### 3. Cau hinh bien moi truong local
+
+Project co the chay ngay voi profile `dev` ma khong bat buoc tao `.env`, vi `application.yml` da co default local.
+
+Neu muon custom MongoDB/JWT/port, tao file `.env` tu mau:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Luu y: khong commit `.env` that. File `.env` chu yeu phuc vu Docker Compose va ghi chu cau hinh local. Khi chay `mvn spring-boot:run`, Spring Boot doc bien moi truong tu OS environment; neu can override trong PowerShell, set bien bang `$env:...`.
+
+Vi du set bien moi truong khi chay local:
+
+```powershell
+$env:SPRING_PROFILES_ACTIVE="dev"
+$env:MONGODB_URI="mongodb://localhost:27017/flashcard_platform"
+$env:JWT_SECRET="dev-only-jwt-secret-please-change-in-production-32bytes"
+```
+
+### 4. Chay MongoDB
+
+Co 2 cach:
+
+1. Dung Docker Compose.
+2. Dung MongoDB local da cai san tai `localhost:27017`.
+
+Neu dung Docker Compose:
 
 Tu thu muc root:
 
@@ -63,7 +125,27 @@ MongoDB mac dinh:
 mongodb://localhost:27017/flashcard_platform
 ```
 
-## Chay Backend
+Kiem tra container:
+
+```bash
+docker compose ps
+```
+
+Dung container MongoDB:
+
+```bash
+docker compose down
+```
+
+### 5. Build backend
+
+```bash
+cd backend
+mvn -q -DskipTests compile
+cd ..
+```
+
+### 6. Chay backend
 
 Profile mac dinh la `dev`. Profile `dev` co JWT secret chi de chay local nhanh, khong dung cho production.
 
@@ -90,6 +172,20 @@ Health check:
 http://localhost:8080/actuator/health
 ```
 
+### 7. Chay test
+
+```bash
+cd backend
+mvn test
+```
+
+Integration test dung MongoDB local. Neu muon tach database test:
+
+```powershell
+$env:MONGODB_TEST_URI="mongodb://localhost:27017/flashcard_platform_test"
+mvn test
+```
+
 ## Bien Moi Truong
 
 Co the tao `.env` tu `.env.example` neu can override cau hinh Docker/local. Khong commit `.env` that.
@@ -105,6 +201,31 @@ Bien quan trong:
 | `ACCESS_TOKEN_EXPIRATION_MS` | `3600000` | 1 gio |
 | `REFRESH_TOKEN_EXPIRATION_MS` | `604800000` | 7 ngay |
 | `CORS_ALLOWED_ORIGINS` | localhost frontend ports | CORS dev |
+| `SERVER_PORT` | `8080` | Port backend |
+| `MONGO_DATABASE` | `flashcard_platform` | Database Docker Compose |
+| `MONGO_PORT` | `27017` | Port MongoDB Docker Compose |
+
+Vi du `.env` local:
+
+```env
+MONGODB_URI=mongodb://localhost:27017/flashcard_platform
+JWT_SECRET=replace-with-at-least-32-random-characters
+ACCESS_TOKEN_EXPIRATION_MS=3600000
+REFRESH_TOKEN_EXPIRATION_MS=604800000
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+SERVER_PORT=8080
+MONGO_DATABASE=flashcard_platform
+MONGO_PORT=27017
+```
+
+Chay backend voi bien moi truong tren PowerShell:
+
+```powershell
+cd backend
+$env:MONGODB_URI="mongodb://localhost:27017/flashcard_platform"
+$env:JWT_SECRET="dev-only-jwt-secret-please-change-in-production-32bytes"
+mvn spring-boot:run
+```
 
 Chay profile production:
 
@@ -120,6 +241,8 @@ $env:SPRING_PROFILES_ACTIVE="prod"
 $env:JWT_SECRET="replace-with-at-least-32-random-characters"
 mvn spring-boot:run
 ```
+
+Trong production, bat buoc set `JWT_SECRET` that va khong dung secret dev.
 
 ## Test
 
@@ -216,25 +339,26 @@ db.users.updateOne(
 
 ## Postman Automation
 
-Thu muc `automation testing/` co 5 Postman collection:
+Thu muc `bo test api/` co 10 Postman collection:
 
 - Learner auth lifecycle
 - Learner private deck and learning
 - Content manager curation
 - Admin moderation/governance
 - Security and boundary regression
+- Public catalog explorer
+- Refresh token abuse checks
+- Ownership isolation
+- Review rating matrix
+- Admin audit and filter checks
 
 Import cac file `*.postman_collection.json` vao Postman. Co the import them:
 
 ```text
-automation testing/flashcard_local.postman_environment.json
+bo test api/flashcard_local.postman_environment.json
 ```
 
-Huong dan chi tiet nam trong:
-
-```text
-automation testing/README.md
-```
+Moi collection dong vai mot nguoi dung that khac nhau va bao phu cac luong Auth, Content, Learning, Admin, Security, public catalog, ownership va audit.
 
 ## Tai Lieu
 
@@ -245,6 +369,7 @@ automation testing/README.md
 - `docs/security-design.md`
 - `docs/learning-engine.md`
 - `docs/development-roadmap.md`
+- `docs/erd.md`
 
 ## Ghi Chu Bao Mat
 
