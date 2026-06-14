@@ -12,7 +12,6 @@ Backend API cho nen tang hoc flashcard, duoc xay theo huong Spring Boot modular 
 - Maven
 - Swagger/OpenAPI
 - JUnit 5, Spring Boot Test
-- Docker Compose cho MongoDB local
 
 ## Module Chinh
 
@@ -29,8 +28,6 @@ Backend API cho nen tang hoc flashcard, duoc xay theo huong Spring Boot modular 
 .
 ├── backend/                 # Spring Boot backend
 ├── bo test api/             # Postman automation collections
-├── docs/                    # Tai lieu PRD, architecture, database design, API contract
-├── docker-compose.yml       # MongoDB local
 ├── .env.example             # Bien moi truong mau
 └── README.md
 ```
@@ -39,7 +36,7 @@ Backend API cho nen tang hoc flashcard, duoc xay theo huong Spring Boot modular 
 
 - JDK 21+
 - Maven 3.9+
-- Docker Desktop hoac MongoDB local tai `localhost:27017`
+- MongoDB local tai `localhost:27017`
 - Git
 - Postman neu muon chay automation collection
 
@@ -48,7 +45,6 @@ Kiem tra nhanh:
 ```bash
 java -version
 mvn -version
-docker --version
 git --version
 ```
 
@@ -77,9 +73,7 @@ Can thay cac thu muc/file chinh:
 
 ```text
 backend/
-docs/
 bo test api/
-docker-compose.yml
 .env.example
 README.md
 ```
@@ -94,7 +88,7 @@ Neu muon custom MongoDB/JWT/port, tao file `.env` tu mau:
 Copy-Item .env.example .env
 ```
 
-Luu y: khong commit `.env` that. File `.env` chu yeu phuc vu Docker Compose va ghi chu cau hinh local. Khi chay `mvn spring-boot:run`, Spring Boot doc bien moi truong tu OS environment; neu can override trong PowerShell, set bien bang `$env:...`.
+Luu y: khong commit `.env` that. Khi chay `mvn spring-boot:run`, Spring Boot doc bien moi truong tu OS environment; neu can override trong PowerShell, set bien bang `$env:...`.
 
 Vi du set bien moi truong khi chay local:
 
@@ -104,37 +98,14 @@ $env:MONGODB_URI="mongodb://localhost:27017/flashcard_platform"
 $env:JWT_SECRET="dev-only-jwt-secret-please-change-in-production-32bytes"
 ```
 
-### 4. Chay MongoDB
+### 4. Chay MongoDB local
 
-Co 2 cach:
-
-1. Dung Docker Compose.
-2. Dung MongoDB local da cai san tai `localhost:27017`.
-
-Neu dung Docker Compose:
-
-Tu thu muc root:
-
-```bash
-docker compose up -d mongodb
-```
+Dam bao MongoDB local dang chay tai `localhost:27017`.
 
 MongoDB mac dinh:
 
 ```text
 mongodb://localhost:27017/flashcard_platform
-```
-
-Kiem tra container:
-
-```bash
-docker compose ps
-```
-
-Dung container MongoDB:
-
-```bash
-docker compose down
 ```
 
 ### 5. Build backend
@@ -188,7 +159,7 @@ mvn test
 
 ## Bien Moi Truong
 
-Co the tao `.env` tu `.env.example` neu can override cau hinh Docker/local. Khong commit `.env` that.
+Co the tao `.env` tu `.env.example` neu can override cau hinh local. Khong commit `.env` that.
 
 Bien quan trong:
 
@@ -202,8 +173,6 @@ Bien quan trong:
 | `REFRESH_TOKEN_EXPIRATION_MS` | `604800000` | 7 ngay |
 | `CORS_ALLOWED_ORIGINS` | localhost frontend ports | CORS dev |
 | `SERVER_PORT` | `8080` | Port backend |
-| `MONGO_DATABASE` | `flashcard_platform` | Database Docker Compose |
-| `MONGO_PORT` | `27017` | Port MongoDB Docker Compose |
 
 Vi du `.env` local:
 
@@ -214,8 +183,6 @@ ACCESS_TOKEN_EXPIRATION_MS=3600000
 REFRESH_TOKEN_EXPIRATION_MS=604800000
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 SERVER_PORT=8080
-MONGO_DATABASE=flashcard_platform
-MONGO_PORT=27017
 ```
 
 Chay backend voi bien moi truong tren PowerShell:
@@ -298,7 +265,7 @@ Nhom endpoint chinh:
 - `POST /admin/users/{id}/unlock`
 - `GET /admin/audit-logs`
 
-Chi tiet API nam trong Swagger va `docs/api-contract.md`.
+Chi tiet API xem trong Swagger UI.
 
 ## Seed Data
 
@@ -359,17 +326,6 @@ bo test api/flashcard_local.postman_environment.json
 ```
 
 Moi collection dong vai mot nguoi dung that khac nhau va bao phu cac luong Auth, Content, Learning, Admin, Security, public catalog, ownership va audit.
-
-## Tai Lieu
-
-- `docs/product-requirements.md`
-- `docs/database-design.md`
-- `docs/architecture.md`
-- `docs/api-contract.md`
-- `docs/security-design.md`
-- `docs/learning-engine.md`
-- `docs/development-roadmap.md`
-- `docs/erd.md`
 
 ## Ghi Chu Bao Mat
 
